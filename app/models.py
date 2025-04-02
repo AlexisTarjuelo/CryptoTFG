@@ -20,3 +20,16 @@ class Asset(db.Model):
 
     def __repr__(self):
         return f"<Asset {self.Symbol}>"
+
+class AssetPrice(db.Model):
+    __tablename__ = 'AssetPrices'
+
+    PriceID = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    AssetID = db.Column(db.Integer, db.ForeignKey('Assets.AssetID'), nullable=False)
+    RecordedAt = db.Column(db.DateTime, nullable=False)
+    PriceUSD = db.Column(db.Numeric(18, 8), nullable=False)
+    MarketCap = db.Column(db.Numeric(38, 18))
+    TotalVolume = db.Column(db.Numeric(38, 18))
+
+    # Relación hacia la tabla de Assets (opcional si necesitas acceder desde AssetPrice a Asset)
+    asset = db.relationship('Asset', backref=db.backref('prices', lazy=True))
