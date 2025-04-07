@@ -2,67 +2,67 @@
 
 {% block content %}
 <body class="auth-page">
-<div class="auth-container">
+  <div class="auth-container">
+    <img src="{{ url_for('static', filename='images/logo_cryptotfg.png') }}" alt="Logo" class="auth-logo">
     <h2>Registrarse</h2>
+
     <form method="POST" action="{{ url_for('auth.register') }}">
-        {{ form.hidden_tag() }}
+      {{ form.hidden_tag() }}
 
-        <div class="registro-container">
-            <!-- Primera fila con nombre y apellido -->
-            <div class="input-group">
-                <label for="first_name">Nombre</label>
-                {{ form.first_name(class="input-field", id="first_name") }}
-            </div>
-            <div class="input-group">
-                <label for="last_name">Primer Apellido</label>
-                {{ form.last_name(class="input-field", id="last_name") }}
-            </div>
-
-            <!-- Segunda fila con segundo apellido y correo -->
-            <div class="input-group">
-                <label for="second_last_name">Segundo Apellido</label>
-                {{ form.second_last_name(class="input-field", id="second_last_name") }}
-            </div>
-            <div class="input-group">
-                <label for="email">Correo</label>
-                {{ form.email(class="input-field", id="email") }}
-            </div>
-
-            <!-- Tercera fila con teléfono y edad -->
-            <div class="input-group">
-                <label for="phone">Teléfono</label>
-                {{ form.phone(class="input-field", id="phone") }}
-            </div>
-            <div class="input-group">
-                <label for="is_adult">¿Eres mayor de edad?</label>
-                {{ form.is_adult(class="input-field", id="is_adult") }}
-            </div>
-
-            <!-- Cuarta fila con contraseñas -->
-            <div class="input-group full-width">
-                <label for="password">Contraseña</label>
-                {{ form.password(class="input-field", id="password") }}
-            </div>
-            <div class="input-group full-width">
-                <label for="confirm_password">Confirmar Contraseña</label>
-                {{ form.confirm_password(class="input-field", id="confirm_password") }}
-            </div>
-
-            <!-- Checkbox para leer documento -->
-            <div class="checkbox-group">
-                <div>
-                    <label for="accept_terms">
-                        {{ form.accept_terms() }} Acepto los términos y condiciones
-                    </label>
-                </div>
-            </div>
-
-            <!-- Botón de registro -->
-            <div class="input-group full-width">
-                <button type="submit" class="btn-submit">Registrarse</button>
-            </div>
+      <div class="registro-container">
+        <!-- Fila 1: Nombre y apellidos -->
+        <div class="input-group">
+          <label for="first_name">Nombre</label>
+          {{ form.first_name(class="input-field", id="first_name") }}
         </div>
+        <div class="input-group">
+          <label for="last_name">Primer Apellido</label>
+          {{ form.last_name(class="input-field", id="last_name") }}
+        </div>
+        <div class="input-group">
+          <label for="second_last_name">Segundo Apellido</label>
+          {{ form.second_last_name(class="input-field", id="second_last_name") }}
+        </div>
+
+        <!-- Fila 2: Correo, Teléfono, Edad -->
+        <div class="input-group">
+          <label for="email">Correo</label>
+          {{ form.email(class="input-field", id="email") }}
+        </div>
+        <div class="input-group">
+          <label for="phone">Teléfono</label>
+          {{ form.phone(class="input-field", id="phone") }}
+        </div>
+        <div class="input-group">
+          <label for="is_adult">¿Eres mayor de edad?</label>
+          {{ form.is_adult(class="input-field", id="is_adult") }}
+        </div>
+
+        <!-- Fila 3: Contraseña y Confirmación -->
+    <div class="input-group">
+        <label for="password">Contraseña</label>
+        {{ form.password(class="input-field", id="password") }}
+    </div>
+    <div class="input-group">
+        <label for="confirm_password">Confirmar Contraseña</label>
+        {{ form.confirm_password(class="input-field", id="confirm_password") }}
+    </div>
+
+
+        <!-- Términos -->
+        <div class="checkbox-group">
+          <label for="accept_terms">
+            {{ form.accept_terms() }} Acepto los términos y condiciones
+          </label>
+        </div>
+
+        <!-- Botón -->
+<!-- Botón de registro en nueva fila -->
+    <div class="input-group full-width">
+        <button type="submit" class="btn-submit">Registrarse</button>
+    </div>
+      </div>
     </form>
-</div>
+  </div>
 </body>
 {% endblock %}

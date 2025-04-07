@@ -2,30 +2,29 @@
 
 {% block content %}
 <body class="auth-page">
-<div class="auth-container login-container">
-  <h1>Iniciar sesión</h1>
+  <div class="auth-container login-container">
+    <img src="{{ url_for('static', filename='images/logo_cryptotfg.png') }}" alt="Logo" class="login-logo">
+    <h1>Iniciar sesión</h1>
 
-  <!-- Formulario de login -->
-  <form method="POST">
-    {{ form.hidden_tag() }}
+    <form method="POST">
+      {{ form.hidden_tag() }}
 
-    <div class="input-group">
-      <label for="email">Correo Electrónico</label>
-      {{ form.email(class="input-field") }}
-    </div>
+      <div class="input-group">
+        <label for="email">Correo Electrónico</label>
+        {{ form.email(class="input-field") }}
+      </div>
 
-    <div class="input-group">
-      <label for="password">Contraseña</label>
-      {{ form.password(class="input-field") }}
-    </div>
+      <div class="input-group">
+        <label for="password">Contraseña</label>
+        {{ form.password(class="input-field") }}
+      </div>
 
-    <button type="submit" class="btn-submit">Iniciar sesión</button>
-  </form>
+      <button type="submit" class="btn-submit">Iniciar sesión</button>
+    </form>
 
     <p>
-    ¿No tienes cuenta? <a href="{{ url_for('auth.register') }}">Regístrate</a><br>
-  </p>
-
-</div>
+      ¿No tienes cuenta? <a href="{{ url_for('auth.register') }}">Regístrate</a><br>
+    </p>
+  </div>
 </body>
 {% endblock %}
