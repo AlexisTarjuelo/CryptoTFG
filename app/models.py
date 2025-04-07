@@ -1,6 +1,7 @@
 # app/models.py
 
 from datetime import datetime
+from werkzeug.security import generate_password_hash, check_password_hash
 from . import db  # ❗ Importa la instancia compartida desde __init__.py
 
 class Asset(db.Model):
@@ -42,3 +43,24 @@ class Transaction(db.Model):
     Amount = db.Column(db.Numeric(38, 18), nullable=False)
     AmountUSD = db.Column(db.Numeric(38, 18), nullable=True)
     Timestamp = db.Column(db.DateTime, nullable=False, default=db.func.now())
+
+
+# Modelo para el Usuario
+class User(db.Model):
+    __tablename__ = 'Users'
+
+    UserID = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    FirstName = db.Column(db.String(100), nullable=False)
+    LastName = db.Column(db.String(100), nullable=False)
+    Email = db.Column(db.String(100), unique=True, nullable=False)
+    Phone = db.Column(db.String(15), nullable=False)
+    IsAdult = db.Column(db.Boolean, default=False)
+    AcceptedTerms = db.Column(db.Boolean, default=False)
+    PasswordHash = db.Column(db.String(500), nullable=False)
+    Role = db.Column(db.String(10), default='user', nullable=False)
+
+    def set_password(self, password):
+        self.PasswordHash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.PasswordHash, password)
