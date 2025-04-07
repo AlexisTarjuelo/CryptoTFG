@@ -1,0 +1,236 @@
+/* ---------------------------- */
+/* RESET Y BASE GENERAL         */
+/* ---------------------------- */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  background-image: url('../images/background_crypto.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  color: #6EF1B3;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+/* ---------------------------- */
+/* CONTENEDOR GENERAL FORMULARIO */
+/* ---------------------------- */
+.auth-container {
+  background-color: rgba(0, 0, 0, 0.7);
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  text-align: center;
+  width: 100%;
+  max-width: 800px;
+}
+
+.login-container {
+  max-width: 420px;
+}
+
+/* ---------------------------- */
+/* LOGO                        */
+/* ---------------------------- */
+.auth-logo,
+.login-logo {
+  width: 150px;
+  height: auto;
+  margin: 0 auto 15px;
+  display: block;
+  filter: drop-shadow(0 0 6px #6EF1B3);
+}
+
+/* ---------------------------- */
+/* TITULOS                     */
+/* ---------------------------- */
+.auth-container h2,
+.login-container h1 {
+  font-size: 28px;
+  font-weight: bold;
+  margin-bottom: 25px;
+  color: #6EF1B3;
+}
+
+/* ---------------------------- */
+/* FORMULARIO GENERAL          */
+/* ---------------------------- */
+form {
+  display: flex;
+  flex-direction: column;
+}
+
+.input-group {
+  margin-bottom: 18px;
+  text-align: left;
+}
+
+.input-group label {
+  font-size: 14px;
+  color: #a4fce0;
+  margin-bottom: 5px;
+  display: block;
+}
+
+.input-field {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #6EF1B3;
+  background-color: #0A0E17;
+  color: #6EF1B3;
+  border-radius: 8px;
+  font-size: 15px;
+  outline: none;
+}
+
+.input-field::placeholder {
+  color: #a4fce0;
+  font-weight: 300;
+}
+
+/* ---------------------------- */
+/* BOTÓN                       */
+/* ---------------------------- */
+.btn-submit {
+  background-color: #6EF1B3;
+  color: #0A0E17;
+  border: none;
+  padding: 12px;
+  font-size: 16px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  margin-top: 10px;
+}
+
+.btn-submit:hover {
+  background-color: #3EC894;
+}
+
+/* ---------------------------- */
+/* PÁRRAFOS Y LINKS            */
+/* ---------------------------- */
+.auth-container p,
+.login-container p {
+  margin-top: 20px;
+  font-size: 13px;
+  color: #a4fce0;
+  text-align: center;
+}
+
+.auth-container a,
+.login-container a {
+  color: #6EF1B3;
+  text-decoration: underline;
+  font-weight: 500;
+}
+
+/* ---------------------------- */
+/* REGISTRO MULTICOLUMNA       */
+/* ---------------------------- */
+.registro-container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.registro-container .input-group {
+  width: 100%;
+}
+
+.registro-container .input-group.full-width {
+  grid-column: span 3;
+}
+
+.checkbox-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: #a4fce0;
+  grid-column: span 3;
+  text-align: left;
+}
+
+.registro-container .btn-submit {
+    grid-column: span 2;
+    justify-self: center;
+    width: 100%;  /* o 50% si prefieres */
+}
+
+
+/* ---------------------------- */
+/* FLASH MESSAGES              */
+/* ---------------------------- */
+.flash-messages {
+  position: fixed;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  max-width: 90%;
+  width: 400px;
+}
+
+.alert {
+  padding: 15px;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  font-weight: bold;
+  text-align: center;
+}
+
+.alert-success {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.alert-danger {
+  background-color: #f44336;
+  color: white;
+}
+
+.alert-warning {
+  background-color: #ff9800;
+  color: white;
+}
+
+.alert-info {
+  background-color: #2196F3;
+  color: white;
+}
+
+/* ---------------------------- */
+/* RESPONSIVE                  */
+/* ---------------------------- */
+@media (max-width: 768px) {
+  .registro-container {
+    grid-template-columns: 1fr;
+  }
+
+  .registro-container .input-group.full-width {
+    grid-column: span 1;
+  }
+
+  .registro-container .btn-submit {
+    grid-column: span 1;
+    width: 100%;
+  }
+
+  .auth-container, .login-container {
+    padding: 30px 20px;
+  }
+
+  .auth-logo, .login-logo {
+    width: 100px;
+  }
+}
