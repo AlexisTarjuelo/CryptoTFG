@@ -1,9 +1,7 @@
 # app/models.py
 
-from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
-
-db = SQLAlchemy()
+from . import db  # ❗ Importa la instancia compartida desde __init__.py
 
 class Asset(db.Model):
     __tablename__ = 'Assets'
@@ -16,10 +14,11 @@ class Asset(db.Model):
     Source = db.Column(db.String(50), nullable=True)
     CreatedAt = db.Column(db.DateTime, default=datetime.utcnow)
     id_coin = db.Column(db.String(100), nullable=True)
-    LogoURL = db.Column(db.String(255), nullable=True)
+    LogoURL = db.Column(db.String(1000), nullable=True)
 
-    def __repr__(self):
-        return f"<Asset {self.Symbol}>"
+    prices = db.relationship('AssetPrice', backref='asset', lazy=True)
+    transactions = db.relationship('Transaction', backref='asset', lazy=True)
+
 
 class AssetPrice(db.Model):
     __tablename__ = 'AssetPrices'
@@ -31,5 +30,15 @@ class AssetPrice(db.Model):
     MarketCap = db.Column(db.Numeric(38, 18))
     TotalVolume = db.Column(db.Numeric(38, 18))
 
-    # Relación hacia la tabla de Assets (opcional si necesitas acceder desde AssetPrice a Asset)
-    asset = db.relationship('Asset', backref=db.backref('prices', lazy=True))
+
+class Transaction(db.Model):
+    __tablename__ = 'Transactions'
+
+    TransactionID = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    AssetID = db.Column(db.Integer, db.ForeignKey('Assets.AssetID'), nullable=False)
+    TxHash = db.Column(db.String(100), unique=True, nullable=False)
+    FromAddress = db.Column(db.String(42), nullable=False)
+    ToAddress = db.Column(db.String(42), nullable=False)
+    Amount = db.Column(db.Numeric(38, 18), nullable=False)
+    AmountUSD = db.Column(db.Numeric(38, 18), nullable=True)
+    Timestamp = db.Column(db.DateTime, nullable=False, default=db.func.now())
