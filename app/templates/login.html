@@ -1,30 +1,162 @@
-{% extends 'base.html' %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login - Cryptotfg</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', sans-serif;
+    }
 
-{% block content %}
-<body class="auth-page">
-  <div class="auth-container login-container">
-    <img src="{{ url_for('static', filename='images/logo_cryptotfg.png') }}" alt="Logo" class="login-logo">
-    <h1>Iniciar sesión</h1>
+    body {
+      background-color: #0A0E17;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      position: relative;
+    }
 
-    <form method="POST">
+    .background-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: url('/static/images/background_grande.png') no-repeat center center;
+      background-size: cover;
+      z-index: -1;
+      filter: brightness(1.1) contrast(1.2);
+    }
+
+    .login-container {
+      background-color: rgba(10, 14, 23, 0.92);
+      border-radius: 12px;
+      padding: 2rem;
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+      box-shadow: 0 0 20px rgba(62, 200, 148, 0.4);
+      border: 1px solid #3EC894;
+    }
+
+    .logo {
+      width: 200px;
+      margin-bottom: 1rem;
+    }
+
+    .title {
+      color: #6EF1B3;
+      font-size: 2rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .input-group {
+      margin-bottom: 1rem;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .input-group input {
+      padding: 0.8rem;
+      border: 1px solid #6EF1B3;
+      border-radius: 8px;
+      font-size: 1rem;
+      background-color: transparent;
+      color: #ffffff;
+    }
+
+    .input-group input::placeholder {
+      color: #6EF1B3;
+    }
+
+    .login-btn {
+      width: 100%;
+      padding: 0.8rem;
+      background-color: #6EF1B3;
+      border: none;
+      border-radius: 8px;
+      color: #0A0E17;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .login-btn:hover {
+      background-color: #3EC894;
+      box-shadow: 0 0 10px #3EC894;
+    }
+
+    .register-link {
+      margin-top: 1rem;
+      color: #ffffff;
+      font-size: 0.9rem;
+    }
+
+    .register-link a {
+      color: #6EF1B3;
+      text-decoration: none;
+      margin-left: 5px;
+    }
+
+    .register-link a:hover {
+      color: #3EC894;
+    }
+
+    .form-error {
+      color: #ff6b6b;
+      font-size: 0.85rem;
+      text-align: left;
+      margin-top: 0.25rem;
+    }
+
+    @media (max-width: 500px) {
+      .login-container {
+        padding: 1.5rem;
+      }
+
+      .title {
+        font-size: 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="background-overlay"></div>
+
+  <div class="login-container">
+    <img src="{{ url_for('static', filename='images/logo_cryptotfg.png') }}" alt="Cryptotfg Logo" class="logo" />
+    <h2 class="title">Login</h2>
+
+    <form method="POST" autocomplete="off">
       {{ form.hidden_tag() }}
 
       <div class="input-group">
-        <label for="email">Correo Electrónico</label>
-        {{ form.email(class="input-field") }}
+        {{ form.email(placeholder="Email", autocomplete="off") }}
+        {% if form.email.errors %}
+          <div class="form-error">{{ form.email.errors[0] }}</div>
+        {% endif %}
       </div>
 
       <div class="input-group">
-        <label for="password">Contraseña</label>
-        {{ form.password(class="input-field") }}
+        {{ form.password(placeholder="Password", autocomplete="off") }}
+        {% if form.password.errors %}
+          <div class="form-error">{{ form.password.errors[0] }}</div>
+        {% endif %}
       </div>
 
-      <button type="submit" class="btn-submit">Iniciar sesión</button>
+      {{ form.submit(class="login-btn") }}
     </form>
 
-    <p>
-      ¿No tienes cuenta? <a href="{{ url_for('auth.register') }}">Regístrate</a><br>
+    <p class="register-link">¿No tienes cuenta?
+      <a href="{{ url_for('auth.register') }}">Regístrate</a>
     </p>
   </div>
 </body>
-{% endblock %}
+</html>

@@ -1,31 +1,226 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>{% block title %}CryptoTFG{% endblock %}</title>
-    <link rel="icon" href="{{ url_for('static', filename='images/criptomonedas.ico') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Cryptotfg{% endblock %}</title>
+
+  <!-- Fuente Poppins de Google -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Poppins', 'Segoe UI', sans-serif;
+    }
+
+    body {
+      background-color: #0A0E17;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    header {
+      background-color: #101823;
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #3EC894;
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+    }
+
+    .logo-container img {
+      width: 80px;
+      height: auto;
+      margin-right: 0.6rem;
+    }
+
+    .app-name {
+      font-size: 1.8rem;
+      color: #6EF1B3;
+      font-weight: 600;
+      letter-spacing: -0.5px;
+    }
+
+    .search-bar {
+      flex: 1;
+      max-width: 400px;
+      margin: 0 2rem;
+    }
+
+    .search-bar input {
+      width: 100%;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      border: 1px solid #6EF1B3;
+      background-color: transparent;
+      color: white;
+      font-size: 1rem;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
+    .nav-links a {
+      color: #ffffff;
+      text-decoration: none;
+      font-size: 1rem;
+      font-weight: 500;
+      transition: color 0.3s;
+    }
+
+    .nav-links a:hover {
+      color: #3EC894;
+    }
+
+    .user-menu {
+      position: relative;
+    }
+
+    .user-avatar {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    .dropdown {
+      position: absolute;
+      top: 45px;
+      right: 0;
+      background-color: #1A2332;
+      border: 1px solid #3EC894;
+      border-radius: 8px;
+      display: none;
+      flex-direction: column;
+      min-width: 150px;
+    }
+
+    .dropdown.show {
+      display: flex;
+    }
+
+    .dropdown a {
+      padding: 0.75rem 1rem;
+      color: white;
+      text-decoration: none;
+      font-size: 0.95rem;
+    }
+
+    .dropdown a:hover {
+      background-color: #3EC894;
+      color: #0A0E17;
+    }
+
+    main {
+      flex: 1;
+      padding: 2rem;
+    }
+
+    footer {
+      background-color: #101823;
+      padding: 1rem;
+      text-align: center;
+      color: #6EF1B3;
+      font-size: 0.9rem;
+      border-top: 1px solid #3EC894;
+    }
+
+    @media (max-width: 768px) {
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+      }
+
+      .logo-container {
+        justify-content: center;
+        width: 100%;
+      }
+
+      .search-bar {
+        width: 100%;
+        margin: 0;
+      }
+
+      .nav-links {
+        width: 100%;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 1rem;
+      }
+
+      .user-menu {
+        margin-left: auto;
+      }
+
+      .user-avatar {
+        width: 50px;
+        height: 50px;
+      }
+    }
+  </style>
 </head>
 <body>
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        <div class="flash-messages">
-          {% for category, message in messages %}
-            <div class="alert alert-{{ category }}">
-              {{ message }}
-            </div>
-          {% endfor %}
+  <header>
+    <div class="logo-container">
+      <img src="/static/images/logo_sin_texto.png" alt="Logo">
+      <span class="app-name">Cryptotfg</span>
+    </div>
+
+    <div class="search-bar">
+      <input type="text" placeholder="Buscar activos...">
+    </div>
+
+    <div class="nav-links">
+      <a href="/dashboard">Inicio</a>
+      <a href="/versus">Versus</a>
+      <a href="/about">About</a>
+      <div class="user-menu">
+        <img src="{{ url_for('static', filename='images/avatars/' ~ g.user.Avatar) }}" alt="Avatar" class="user-avatar">
+        <div class="dropdown">
+          <a href="/profile">Editar perfil</a>
+          <a href="/logout">Cerrar sesión</a>
         </div>
-      {% endif %}
-    {% endwith %}
+      </div>
+    </div>
+  </header>
 
-    {% block navbar %}
-    <!-- Aquí puedes poner una navbar común si quieres -->
+  <main>
+    {% block content %}
     {% endblock %}
+  </main>
 
-    <main>
-        {% block content %}
-        {% endblock %}
-    </main>
+  <footer>
+    © {{ start_year }}{% if start_year != year %} - {{ year }}{% endif %} Cryptotfg. Todos los derechos reservados.
+  </footer>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const avatar = document.querySelector(".user-avatar");
+      const dropdown = document.querySelector(".dropdown");
+
+      avatar.addEventListener("click", function (e) {
+        e.stopPropagation();
+        dropdown.classList.toggle("show");
+      });
+
+      document.addEventListener("click", function () {
+        dropdown.classList.remove("show");
+      });
+    });
+  </script>
 </body>
 </html>

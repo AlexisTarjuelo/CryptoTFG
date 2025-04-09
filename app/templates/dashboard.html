@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - Cryptotfg{% endblock %}
+
+{% block content %}
+<style>
+  .dashboard-header {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+  .summary-cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    justify-content: space-between;
+  }
+  .card {
+    flex: 1;
+    min-width: 250px;
+    background-color: #101823;
+    border: 1px solid #3EC894;
+    border-radius: 12px;
+    padding: 1.5rem;
+    color: #6EF1B3;
+    text-align: center;
+  }
+  .card h3 {
+    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+    color: #ffffff;
+  }
+  .card .value {
+    font-size: 2rem;
+    font-weight: bold;
+  }
+  .card .negative {
+    color: #FF6B6B;
+  }
+  .crypto-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 2rem;
+    background-color: #0A0E17;
+    border: 1px solid #3EC894;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .crypto-table th, .crypto-table td {
+    padding: 1rem;
+    text-align: left;
+  }
+  .crypto-table thead {
+    background-color: #101823;
+    color: #6EF1B3;
+  }
+  .crypto-table tbody tr:nth-child(odd) {
+    background-color: #0D121C;
+  }
+  .crypto-table tbody tr:nth-child(even) {
+    background-color: #101823;
+  }
+  .crypto-table tbody td {
+    color: #ffffff;
+  }
+  .crypto-table tbody td.positive {
+    color: #3EC894;
+  }
+  .pagination-btn {
+    background-color: #6EF1B3;
+    border: none;
+    color: #0A0E17;
+    padding: 0.6rem 1.5rem;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    text-decoration: none;
+  }
+  .pagination-btn:hover {
+    background-color: #3EC894;
+  }
+</style>
+
+<div class="dashboard-header">
+  <h1 style="color: #6EF1B3;">Dashboard</h1>
+
+  <div class="summary-cards">
+    <div class="card">
+      <h3>Total Portfolio Value</h3>
+      <div class="value">${{ '%.2f'|format(total_value) }}</div>
+    </div>
+    <div class="card">
+      <h3>24h Change</h3>
+      <div class="value {% if change_24h < 0 %}negative{% endif %}">
+        {% if change_24h < 0 %}-{% endif %}${{ '%.2f'|format(change_24h|abs) }}
+      </div>
+    </div>
+    <div class="card">
+      <h3>Top Asset</h3>
+      <div class="value">{{ top_asset[1] }} ({{ top_asset[2] }})</div>
+    </div>
+  </div>
+</div>
+
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1rem;">
+  <div>
+    <label for="sort" style="color: #6EF1B3;">Ordenar por:</label>
+    <select id="sort" onchange="changeSort(this.value)" style="padding: 0.4rem; border-radius: 8px;">
+      <option value="marketcap" {% if sort_by == 'marketcap' %}selected{% endif %}>Market Cap</option>
+      <option value="price" {% if sort_by == 'price' %}selected{% endif %}>Precio</option>
+      <option value="volume" {% if sort_by == 'volume' %}selected{% endif %}>Volumen</option>
+    </select>
+  </div>
+
+  <a href="{{ url_for('auth.export_dashboard_csv') }}" class="pagination-btn">📥 Exportar CSV</a>
+</div>
+
+<table class="crypto-table">
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Activo</th>
+      <th>Precio</th>
+      <th>Market Cap</th>
+      <th>Volumen 24h</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for id, name, symbol, logo_url, price, market_cap, volume in assets %}
+    <tr>
+      <td>{{ loop.index + ((page - 1) * 100) }}</td>
+      <td>
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <img src="{{ logo_url }}" alt="{{ symbol }}" width="24" height="24" style="border-radius: 50%;">
+          <span>{{ name }} ({{ symbol }})</span>
+        </div>
+      </td>
+      <td>${{ '%.2f'|format(price) }}</td>
+      <td>${{ '{:,.0f}'.format(market_cap) if market_cap else '-' }}</td>
+      <td class="positive">${{ '{:,.0f}'.format(volume) if volume else '-' }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<div style="display: flex; justify-content: center; gap: 1rem; margin-top: 2rem;">
+  {% if page > 1 %}
+    <a href="{{ url_for('auth.dashboard', page=page-1, sort=sort_by) }}" class="pagination-btn">Anterior</a>
+  {% endif %}
+  {% if page < total_pages %}
+    <a href="{{ url_for('auth.dashboard', page=page+1, sort=sort_by) }}" class="pagination-btn">Siguiente</a>
+  {% endif %}
+</div>
+
+<script>
+  function changeSort(value) {
+    window.location.href = `?sort=${value}&page=1`;
+  }
+</script>
+{% endblock %}
