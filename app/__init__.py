@@ -1,10 +1,12 @@
 # app/__init__.py
 from datetime import datetime
 
+from dotenv import load_dotenv
 from flask import Flask, g, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect
 
+load_dotenv()
 db = SQLAlchemy()
 csrf = CSRFProtect()
 
