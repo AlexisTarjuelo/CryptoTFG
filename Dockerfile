@@ -19,6 +19,7 @@ WORKDIR /app
 
 # Copia los archivos del proyecto
 COPY . .
+ENV PYTHONPATH=/app
 
 # Instala dependencias Python
 RUN pip install --upgrade pip
