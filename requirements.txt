@@ -7,7 +7,7 @@ pyotp==2.9.0
 qrcode==7.4.2
 itsdangerous==2.1.2
 requests==2.31.0
-pyodbc==4.0.34
+pyodbc==5.0.1
 python-dotenv==1.0.1
 py_webauthn==0.0.4
 cryptography==41.0.3
