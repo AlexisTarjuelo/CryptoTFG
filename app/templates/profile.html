@@ -1,213 +1,175 @@
 {% extends "base.html" %}
-{% block title %}Editar Perfil - Cryptotfg{% endblock %}
+{% block title %}Perfil - Cryptotfg{% endblock %}
 
 {% block content %}
 <style>
   .profile-container {
-    max-width: 700px;
+    max-width: 800px;
     margin: 0 auto;
-    text-align: center;
-    padding: 1rem;
+    background-color: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 2rem;
   }
+
   .profile-avatar {
-    width: 120px;
-    height: 120px;
-    border-radius: 50%;
-    cursor: pointer;
-    border: 3px solid #6EF1B3;
-    margin-bottom: 1.5rem;
-    object-fit: cover;
-  }
-  .form-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
+    text-align: center;
     margin-bottom: 2rem;
   }
-  .form-group {
-    display: flex;
-    flex-direction: column;
-    text-align: left;
-  }
-  .form-group label {
-    margin-bottom: 0.25rem;
-    font-weight: 500;
-    color: #6EF1B3;
-  }
-  .form-group input {
-    padding: 0.6rem;
-    border-radius: 8px;
-    border: 1px solid #6EF1B3;
-    background-color: transparent;
-    color: white;
-    font-size: 1rem;
-  }
-  .avatar-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1.5rem;
-    justify-content: center;
-    margin-top: 1.5rem;
-  }
-  .avatar-option {
-    text-align: center;
-    cursor: pointer;
-  }
-  .avatar-option img {
+
+  .profile-avatar img {
     width: 100px;
     height: 100px;
     border-radius: 50%;
-    border: 2px solid transparent;
-    transition: 0.3s;
+    cursor: pointer;
   }
-  .avatar-option input[type="radio"] {
-    display: none;
-  }
-  .avatar-option.selected img {
-    border-color: #6EF1B3;
-  }
-  .button-group {
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
-    gap: 1rem;
-    flex-wrap: wrap;
-  }
-  .login-btn, .cancel-btn {
-    padding: 0.8rem 2rem;
+
+  .profile-avatar button {
+    margin-top: 0.5rem;
+    background-color: var(--accent);
+    border: none;
+    padding: 0.5rem 1rem;
     border-radius: 8px;
-    font-size: 1rem;
     font-weight: bold;
     cursor: pointer;
-    transition: 0.3s ease;
-    border: none;
+    color: var(--bg);
   }
-  .login-btn {
-    background-color: #6EF1B3;
-    color: #0A0E17;
+
+  .profile-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
   }
-  .login-btn:hover {
-    background-color: #3EC894;
+
+  .form-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
   }
-  .cancel-btn {
+
+  .form-row .form-group {
+    flex: 1;
+    min-width: 45%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .form-group label {
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 0.25rem;
+  }
+
+  .form-group input[type="text"],
+  .form-group input[type="password"],
+  .form-group input[type="email"],
+  .form-group input[type="tel"] {
+    padding: 0.6rem;
+    border-radius: 8px;
+    border: 1px solid var(--border);
     background-color: transparent;
-    border: 1px solid #6EF1B3;
-    color: #6EF1B3;
+    color: var(--text);
   }
-  .cancel-btn:hover {
-    background-color: #3EC894;
-    color: #0A0E17;
+
+  .form-actions {
+    text-align: right;
+    margin-top: 1.5rem;
   }
-  .modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background-color: rgba(0,0,0,0.8);
-    display: none;
-    justify-content: center;
+
+  .form-actions button {
+    background-color: var(--accent);
+    border: none;
+    color: var(--bg);
+    padding: 0.7rem 1.5rem;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+
+  .biometric-toggle {
+    margin-top: 1rem;
+    display: flex;
     align-items: center;
-    z-index: 1000;
+    gap: 0.5rem;
   }
-  .modal-content {
-    background-color: #101823;
-    padding: 2rem;
-    border-radius: 12px;
-    max-width: 800px;
-    width: 90%;
-    overflow-y: auto;
-    max-height: 90vh;
-  }
-  @media (max-width: 768px) {
-    .form-grid {
-      grid-template-columns: 1fr;
+
+  @media (max-width: 600px) {
+    .form-row .form-group {
+      min-width: 100%;
     }
-    .button-group {
-      flex-direction: column;
+    .form-actions {
+      text-align: center;
     }
   }
 </style>
 
 <div class="profile-container">
-  <img id="selected-avatar" src="{{ url_for('static', filename='images/avatars/' ~ form.avatar.data) }}" class="profile-avatar" alt="Avatar actual">
+  <div class="profile-avatar">
+    <img src="{{ url_for('static', filename='images/avatars/' ~ user.Avatar) }}" alt="Avatar" id="avatar-preview">
+    <br>
+    <button type="button" onclick="toggleAvatarPicker()">Cambiar avatar</button>
+  </div>
 
-  <form method="POST">
+  <form method="post" class="profile-form">
     {{ form.hidden_tag() }}
-
-    <div class="form-grid">
-      <div class="form-group">
-        {{ form.first_name.label }}
-        {{ form.first_name(placeholder="Nombre") }}
-      </div>
-      <div class="form-group">
-        {{ form.last_name.label }}
-        {{ form.last_name(placeholder="Primer apellido") }}
-      </div>
-      <div class="form-group">
-        {{ form.second_last_name.label }}
-        {{ form.second_last_name(placeholder="Segundo apellido") }}
-      </div>
-      <div class="form-group">
-        {{ form.phone.label }}
-        {{ form.phone(placeholder="Teléfono") }}
-      </div>
-      <div class="form-group">
-        {{ form.password.label }}
-        {{ form.password(placeholder="Nueva contraseña") }}
-      </div>
-      <div class="form-group">
-        {{ form.confirm_password.label }}
-        {{ form.confirm_password(placeholder="Confirma tu contraseña") }}
-      </div>
+    <div class="form-row">
+      <div class="form-group">{{ form.first_name.label }}{{ form.first_name }}</div>
+      <div class="form-group">{{ form.last_name.label }}{{ form.last_name }}</div>
     </div>
-
-    <div class="modal" id="avatarModal">
-      <div class="modal-content">
-        <h3 style="color:#6EF1B3; margin-bottom: 1rem;">Selecciona tu avatar</h3>
-        <div class="avatar-grid">
-          {% for value, label in form.avatar.choices %}
-            <label class="avatar-option {% if form.avatar.data == value %}selected{% endif %}">
-              <input type="radio" name="avatar" value="{{ value }}" {% if form.avatar.data == value %}checked{% endif %}>
-              <img src="{{ url_for('static', filename='images/avatars/' ~ value) }}" alt="{{ label }}">
-              <div style="color: white; font-size: 0.85rem; margin-top: 0.3rem;">{{ label }}</div>
-            </label>
-          {% endfor %}
-        </div>
-      </div>
+    <div class="form-row">
+      <div class="form-group">{{ form.second_last_name.label }}{{ form.second_last_name }}</div>
+      <div class="form-group">{{ form.phone.label }}{{ form.phone }}</div>
     </div>
-
-    <div class="button-group">
-      {{ form.submit(class="login-btn") }}
-      <a href="{{ url_for('auth.dashboard') }}" class="cancel-btn">Cancelar</a>
+    <div class="form-row">
+      <div class="form-group">{{ form.password.label }}{{ form.password }}</div>
+      <div class="form-group">{{ form.confirm_password.label }}{{ form.confirm_password }}</div>
+    </div>
+    <div class="biometric-toggle">
+      <input type="checkbox" id="enableBiometrics" onchange="startBiometricRegistration()">
+      <label for="enableBiometrics">Activar acceso biométrico</label>
+    </div>
+    <div class="form-actions">
+      {{ form.submit(class_='btn btn-primary') }}
     </div>
   </form>
 </div>
 
 <script>
-  const modal = document.getElementById("avatarModal");
-  const avatarImage = document.getElementById("selected-avatar");
-  const radioInputs = document.querySelectorAll("input[name='avatar']");
-  const avatarOptions = document.querySelectorAll(".avatar-option");
+  function toggleAvatarPicker() {
+    alert("Aquí se mostraría una galería para elegir avatar.");
+  }
 
-  avatarImage.addEventListener("click", () => {
-    modal.style.display = "flex";
-  });
-
-  avatarOptions.forEach(option => {
-    option.addEventListener("click", () => {
-      avatarOptions.forEach(o => o.classList.remove("selected"));
-      option.classList.add("selected");
-      const img = option.querySelector("img");
-      avatarImage.src = img.src;
-      modal.style.display = "none";
-    });
-  });
-
-  document.addEventListener("click", e => {
-    if (e.target === modal) {
-      modal.style.display = "none";
+  async function startBiometricRegistration() {
+    if (!window.PublicKeyCredential) {
+      alert("Tu navegador no soporta autenticación biométrica.");
+      return;
     }
-  });
+
+    const response = await fetch("/biometric/start-registration");
+    const options = await response.json();
+
+    options.challenge = Uint8Array.from(atob(options.challenge), c => c.charCodeAt(0));
+    options.user.id = Uint8Array.from(atob(options.user.id), c => c.charCodeAt(0));
+
+    const credential = await navigator.credentials.create({ publicKey: options });
+
+    const credentialData = {
+      id: credential.id,
+      rawId: btoa(String.fromCharCode(...new Uint8Array(credential.rawId))),
+      type: credential.type,
+      response: {
+        clientDataJSON: btoa(String.fromCharCode(...new Uint8Array(credential.response.clientDataJSON))),
+        attestationObject: btoa(String.fromCharCode(...new Uint8Array(credential.response.attestationObject)))
+      }
+    };
+
+    await fetch('/biometric/finish-registration', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(credentialData)
+    });
+
+    alert("Biometría activada correctamente ✅");
+  }
 </script>
 {% endblock %}
