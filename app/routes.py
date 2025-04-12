@@ -1,5 +1,6 @@
 # routes.py
 import os
+from datetime import datetime, timedelta
 from decimal import Decimal
 
 from flask import render_template, redirect, url_for, flash, session, request, Blueprint, current_app, Response, \
@@ -26,7 +27,7 @@ def login():
             return redirect(url_for('auth.dashboard'))
         else:
             flash("❌ Credenciales incorrectas", "danger")
-    return render_template("login.html", form=form)
+    return render_template("login.html", form=form, login_page=True)
 
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
@@ -52,7 +53,7 @@ def register():
 
         flash("✅ Registro exitoso, ahora puedes iniciar sesión", "success")
         return redirect(url_for('auth.login'))
-    return render_template("register.html", form=form)
+    return render_template("register.html", form=form, login_page=True)
 
 
 from flask import render_template, request, redirect, url_for, session
@@ -66,12 +67,10 @@ def dashboard():
     if 'user_id' not in session:
         return redirect(url_for('auth.login'))
 
-    # Parámetros de orden y página
     sort_by = request.args.get('sort', 'marketcap')
     page = int(request.args.get('page', 1))
     per_page = 100
 
-    # Subconsulta: última fecha por AssetID
     subquery = (
         db.session.query(
             AssetPrice.AssetID,
@@ -81,22 +80,22 @@ def dashboard():
         .subquery()
     )
 
-    # Consulta principal usando with_entities
+    # Consulta principal actualizada con id_coin
     query = (
         db.session.query(
-            Asset.AssetID,       # p[0]
-            Asset.Name,          # p[1]
-            Asset.Symbol,        # p[2]
-            Asset.LogoURL,       # p[3]
-            AssetPrice.PriceUSD, # p[4]
-            AssetPrice.MarketCap,# p[5]
-            AssetPrice.TotalVolume # p[6]
+            Asset.AssetID,         # 0
+            Asset.Name,            # 1
+            Asset.Symbol,          # 2
+            Asset.LogoURL,         # 3
+            Asset.id_coin,         # 4
+            AssetPrice.PriceUSD,   # 5
+            AssetPrice.MarketCap,  # 6
+            AssetPrice.TotalVolume # 7
         )
         .join(AssetPrice, Asset.AssetID == AssetPrice.AssetID)
         .join(subquery, (AssetPrice.AssetID == subquery.c.AssetID) & (AssetPrice.RecordedAt == subquery.c.max_date))
     )
 
-    # Orden dinámico
     if sort_by == 'price':
         query = query.order_by(AssetPrice.PriceUSD.desc())
     elif sort_by == 'volume':
@@ -104,17 +103,15 @@ def dashboard():
     else:
         query = query.order_by(AssetPrice.MarketCap.desc())
 
-    # Paginación
     paginated = query.paginate(page=page, per_page=per_page)
 
-    # Calcular total de precios visibles
-    total_value = sum(float(p[4]) if p[4] else 0 for p in paginated.items)
+    # ✅ Índice 5: precio
+    total_value = sum(float(p[5]) if p[5] else 0 for p in paginated.items)
 
-    # Activo con mayor MarketCap
-    top_asset = max(paginated.items, key=lambda x: x[5] if x[5] else Decimal(0)) if paginated.items else None
+    # ✅ Índice 6: marketcap
+    top_asset = max(paginated.items, key=lambda x: x[6] if x[6] else 0) if paginated.items else None
 
-    # Cambio simulado por ahora
-    change_24h = -932.21
+    change_24h = -932.21  # Simulado
 
     return render_template('dashboard.html',
         assets=paginated.items,
@@ -125,6 +122,7 @@ def dashboard():
         total_pages=paginated.pages,
         sort_by=sort_by
     )
+
 
 
 
@@ -207,3 +205,58 @@ def export_dashboard_csv():
     response.headers['Content-Disposition'] = 'attachment; filename=\"dashboard_export.csv\"'
     response.mimetype = 'text/csv'
     return response
+
+@auth_bp.route('/asset/<string:id_coin>')
+def asset_detail(id_coin):
+    asset = Asset.query.filter_by(id_coin=id_coin).first_or_404()
+
+    latest_price = (
+        db.session.query(
+            AssetPrice.PriceUSD,
+            AssetPrice.MarketCap,
+            AssetPrice.TotalVolume,
+            AssetPrice.RecordedAt
+        )
+        .filter(AssetPrice.AssetID == asset.AssetID)
+        .order_by(AssetPrice.RecordedAt.desc())
+        .first()
+    )
+
+    price_history = (
+        db.session.query(
+            AssetPrice.RecordedAt,
+            AssetPrice.PriceUSD
+        )
+        .filter(AssetPrice.AssetID == asset.AssetID)
+        .order_by(AssetPrice.RecordedAt.asc())
+        .all()
+    )
+
+    return render_template(
+        "asset_detail.html",
+        asset=asset,
+        latest_price=latest_price,
+        price_history=price_history
+    )
+
+
+
+
+@auth_bp.route('/search')
+def search_asset():
+    query = request.args.get('q', '').strip().lower()
+
+    if not query:
+        flash("Introduce un valor para buscar.", "warning")
+        return redirect(url_for('auth.dashboard'))
+
+    # Buscar por symbol o id_coin
+    asset = Asset.query.filter(
+        (Asset.Symbol.ilike(query)) | (Asset.id_coin.ilike(query))
+    ).first()
+
+    if asset:
+        return redirect(url_for('auth.asset_detail', id_coin=asset.id_coin))
+
+    flash("Activo no encontrado.", "danger")
+    return redirect(url_for('auth.dashboard'))

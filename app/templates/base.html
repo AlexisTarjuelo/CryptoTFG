@@ -4,10 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}Cryptotfg{% endblock %}</title>
-
-  <!-- Fuente Poppins de Google -->
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-
   <style>
     * {
       margin: 0;
@@ -17,20 +14,39 @@
     }
 
     body {
-      background-color: #0A0E17;
-      color: white;
+      background-color: var(--bg-color);
+      color: var(--text-color);
       display: flex;
       flex-direction: column;
       min-height: 100vh;
     }
 
+    :root {
+      --bg-color: #0A0E17;
+      --text-color: white;
+      --accent: #6EF1B3;
+      --header-bg: #101823;
+      --table-row-odd: #0D121C;
+      --table-row-even: #101823;
+    }
+
+    body.light {
+      --bg-color: #f7f7f7;
+      --text-color: #101010;
+      --accent: #13c291;
+      --header-bg: #ffffff;
+      --table-row-odd: #f2f2f2;
+      --table-row-even: #ffffff;
+    }
+
+    {% if not login_page %}
     header {
-      background-color: #101823;
+      background-color: var(--header-bg);
       padding: 1rem 2rem;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      border-bottom: 1px solid #3EC894;
+      border-bottom: 1px solid var(--accent);
     }
 
     .logo-container {
@@ -46,7 +62,7 @@
 
     .app-name {
       font-size: 1.8rem;
-      color: #6EF1B3;
+      color: var(--accent);
       font-weight: 600;
       letter-spacing: -0.5px;
     }
@@ -61,9 +77,9 @@
       width: 100%;
       padding: 0.5rem 1rem;
       border-radius: 8px;
-      border: 1px solid #6EF1B3;
+      border: 1px solid var(--accent);
       background-color: transparent;
-      color: white;
+      color: var(--text-color);
       font-size: 1rem;
     }
 
@@ -74,7 +90,7 @@
     }
 
     .nav-links a {
-      color: #ffffff;
+      color: var(--text-color);
       text-decoration: none;
       font-size: 1rem;
       font-weight: 500;
@@ -82,7 +98,7 @@
     }
 
     .nav-links a:hover {
-      color: #3EC894;
+      color: var(--accent);
     }
 
     .user-menu {
@@ -101,7 +117,7 @@
       top: 45px;
       right: 0;
       background-color: #1A2332;
-      border: 1px solid #3EC894;
+      border: 1px solid var(--accent);
       border-radius: 8px;
       display: none;
       flex-direction: column;
@@ -120,60 +136,44 @@
     }
 
     .dropdown a:hover {
-      background-color: #3EC894;
-      color: #0A0E17;
+      background-color: var(--accent);
+      color: var(--bg-color);
     }
+
+    .toggle-theme {
+      background-color: transparent;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      padding: 0.3rem 0.8rem;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .toggle-theme:hover {
+      background-color: var(--accent);
+      color: var(--bg-color);
+    }
+    {% endif %}
 
     main {
       flex: 1;
       padding: 2rem;
     }
 
+    {% if not login_page %}
     footer {
-      background-color: #101823;
+      background-color: var(--header-bg);
       padding: 1rem;
       text-align: center;
-      color: #6EF1B3;
+      color: var(--accent);
       font-size: 0.9rem;
-      border-top: 1px solid #3EC894;
+      border-top: 1px solid var(--accent);
     }
-
-    @media (max-width: 768px) {
-      header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 1rem;
-      }
-
-      .logo-container {
-        justify-content: center;
-        width: 100%;
-      }
-
-      .search-bar {
-        width: 100%;
-        margin: 0;
-      }
-
-      .nav-links {
-        width: 100%;
-        justify-content: space-between;
-        flex-wrap: wrap;
-        gap: 1rem;
-      }
-
-      .user-menu {
-        margin-left: auto;
-      }
-
-      .user-avatar {
-        width: 50px;
-        height: 50px;
-      }
-    }
+    {% endif %}
   </style>
 </head>
 <body>
+  {% if not login_page %}
   <header>
     <div class="logo-container">
       <img src="/static/images/logo_sin_texto.png" alt="Logo">
@@ -181,15 +181,18 @@
     </div>
 
     <div class="search-bar">
-      <input type="text" placeholder="Buscar activos...">
+      <form action="/search" method="get">
+        <input type="text" name="q" placeholder="Buscar activos...">
+      </form>
     </div>
 
     <div class="nav-links">
       <a href="/dashboard">Inicio</a>
       <a href="/versus">Versus</a>
       <a href="/about">About</a>
+      <button class="toggle-theme" onclick="toggleTheme()">🌓</button>
       <div class="user-menu">
-        <img src="{{ url_for('static', filename='images/avatars/' ~ g.user.Avatar) }}" alt="Avatar" class="user-avatar">
+        <img src="{{ url_for('static', filename='images/avatars/' ~ g.user.Avatar) }}" alt="Usuario" class="user-avatar">
         <div class="dropdown">
           <a href="/profile">Editar perfil</a>
           <a href="/logout">Cerrar sesión</a>
@@ -197,30 +200,43 @@
       </div>
     </div>
   </header>
+  {% endif %}
 
   <main>
-    {% block content %}
-    {% endblock %}
+    {% block content %}{% endblock %}
   </main>
 
+  {% if not login_page %}
   <footer>
     © {{ start_year }}{% if start_year != year %} - {{ year }}{% endif %} Cryptotfg. Todos los derechos reservados.
   </footer>
+  {% endif %}
 
   <script>
     document.addEventListener("DOMContentLoaded", function () {
       const avatar = document.querySelector(".user-avatar");
       const dropdown = document.querySelector(".dropdown");
 
-      avatar.addEventListener("click", function (e) {
-        e.stopPropagation();
-        dropdown.classList.toggle("show");
-      });
+      if (avatar) {
+        avatar.addEventListener("click", function (e) {
+          e.stopPropagation();
+          dropdown.classList.toggle("show");
+        });
 
-      document.addEventListener("click", function () {
-        dropdown.classList.remove("show");
-      });
+        document.addEventListener("click", function () {
+          dropdown.classList.remove("show");
+        });
+      }
+
+      if (localStorage.getItem('theme') === 'light') {
+        document.body.classList.add('light');
+      }
     });
+
+    function toggleTheme() {
+      document.body.classList.toggle('light');
+      localStorage.setItem('theme', document.body.classList.contains('light') ? 'light' : 'dark');
+    }
   </script>
 </body>
 </html>
