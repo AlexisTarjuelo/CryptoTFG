@@ -94,6 +94,12 @@
     background-color: #3EC894;
   }
 
+  .table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    margin-top: 2rem;
+  }
+
   @media (max-width: 768px) {
     .summary-cards {
       flex-direction: column;
@@ -102,6 +108,24 @@
     .crypto-table th, .crypto-table td {
       padding: 0.5rem;
       font-size: 0.9rem;
+      white-space: nowrap;
+    }
+
+    .dashboard-header h1 {
+      font-size: 1.5rem;
+    }
+
+    .card .value {
+      font-size: 1.5rem;
+    }
+
+    .sort-export-container {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .sort-export-container > * {
+      width: 100%;
     }
   }
 </style>
@@ -127,7 +151,7 @@
   </div>
 </div>
 
-<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
+<div class="sort-export-container" style="display:flex; justify-content:space-between; align-items:center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
   <div>
     <label for="sort" style="color: var(--accent); font-weight: 500;">Ordenar por:</label>
     <select id="sort" onchange="changeSort(this.value)" style="padding: 0.4rem; border-radius: 8px;">
@@ -136,36 +160,38 @@
       <option value="volume" {% if sort_by == 'volume' %}selected{% endif %}>Volumen</option>
     </select>
   </div>
-  <a href="{{ url_for('auth.export_dashboard_csv') }}" class="pagination-btn">📥 Exportar CSV</a>
+  <a href="{{ url_for('auth.export_dashboard_csv') }}" class="pagination-btn">📅 Exportar CSV</a>
 </div>
 
-<table class="crypto-table">
-  <thead>
-    <tr>
-      <th>#</th>
-      <th>Activo</th>
-      <th>Precio</th>
-      <th>Market Cap</th>
-      <th>Volumen 24h</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for id, name, symbol, logo_url, id_coin, price, market_cap, volume in assets %}
-    <tr>
-      <td>{{ loop.index + ((page - 1) * 100) }}</td>
-      <td>
-        <a href="{{ url_for('auth.asset_detail', id_coin=id_coin) }}" style="display: flex; align-items: center; gap: 0.5rem; text-decoration: none;">
-          <img src="{{ logo_url }}" alt="{{ symbol }}" width="24" height="24" style="border-radius: 50%;">
-          <span style="color: var(--accent);">{{ name }} ({{ symbol }})</span>
-        </a>
-      </td>
-      <td>${{ '%.2f'|format(price) }}</td>
-      <td>${{ '{:,.0f}'.format(market_cap) if market_cap else '-' }}</td>
-      <td class="positive">${{ '{:,.0f}'.format(volume) if volume else '-' }}</td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
+<div class="table-wrapper">
+  <table class="crypto-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Activo</th>
+        <th>Precio</th>
+        <th>Market Cap</th>
+        <th>Volumen 24h</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for id, name, symbol, logo_url, id_coin, price, market_cap, volume in assets %}
+      <tr>
+        <td>{{ loop.index + ((page - 1) * 100) }}</td>
+        <td>
+          <a href="{{ url_for('auth.asset_detail', id_coin=id_coin) }}" style="display: flex; align-items: center; gap: 0.5rem; text-decoration: none;">
+            <img src="{{ logo_url }}" alt="{{ symbol }}" width="24" height="24" style="border-radius: 50%;">
+            <span style="color: var(--accent);">{{ name }} ({{ symbol }})</span>
+          </a>
+        </td>
+        <td>${{ '%.2f'|format(price) }}</td>
+        <td>${{ '{:,.0f}'.format(market_cap) if market_cap else '-' }}</td>
+        <td class="positive">${{ '{:,.0f}'.format(volume) if volume else '-' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
 
 <div style="display: flex; justify-content: center; gap: 1rem; margin-top: 2rem; flex-wrap: wrap;">
   {% if page > 1 %}
