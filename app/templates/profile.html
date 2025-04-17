@@ -6,10 +6,11 @@
   .profile-container {
     max-width: 800px;
     margin: 0 auto;
-    background-color: var(--card);
-    border: 1px solid var(--border);
+    background-color: var(--header-bg);
+    border: 1px solid var(--accent);
     border-radius: 12px;
     padding: 2rem;
+    box-shadow: 0 0 10px rgba(110, 241, 179, 0.1);
   }
 
   .profile-avatar {
@@ -22,17 +23,24 @@
     height: 100px;
     border-radius: 50%;
     cursor: pointer;
+    border: 2px solid var(--accent);
   }
 
   .profile-avatar button {
     margin-top: 0.5rem;
     background-color: var(--accent);
     border: none;
-    padding: 0.5rem 1rem;
+    padding: 0.6rem 1.2rem;
     border-radius: 8px;
     font-weight: bold;
     cursor: pointer;
-    color: var(--bg);
+    color: var(--bg-color);
+    transition: background 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .profile-avatar button:hover {
+    background-color: #3EC894;
+    box-shadow: 0 0 10px #3EC894;
   }
 
   .profile-form {
@@ -60,45 +68,132 @@
     margin-bottom: 0.25rem;
   }
 
-  .form-group input[type="text"],
-  .form-group input[type="password"],
-  .form-group input[type="email"],
-  .form-group input[type="tel"] {
+  .form-group input {
     padding: 0.6rem;
     border-radius: 8px;
-    border: 1px solid var(--border);
+    border: 1px solid var(--accent);
     background-color: transparent;
-    color: var(--text);
+    color: var(--text-color);
   }
 
   .form-actions {
-    text-align: right;
-    margin-top: 1.5rem;
+    display: flex;
+    justify-content: center;
+    margin-top: 2rem;
   }
 
-  .form-actions button {
+  .form-actions .btn {
     background-color: var(--accent);
     border: none;
-    color: var(--bg);
-    padding: 0.7rem 1.5rem;
+    color: var(--bg-color);
+    padding: 0.8rem 1.8rem;
     border-radius: 8px;
+    font-size: 1rem;
     font-weight: bold;
     cursor: pointer;
+    transition: background 0.3s ease, box-shadow 0.3s ease;
   }
 
-  .biometric-toggle {
-    margin-top: 1rem;
-    display: flex;
+  .form-actions .btn:hover {
+    background-color: #3EC894;
+    box-shadow: 0 0 10px #3EC894;
+  }
+
+  .biometric-section {
+    text-align: center;
+    margin-top: 3rem;
+  }
+
+  .biometric-section h3 {
+    color: var(--accent);
+    margin-bottom: 1rem;
+  }
+
+  .biometric-btn {
+    background-color: var(--accent);
+    border: none;
+    color: var(--bg-color);
+    padding: 0.8rem 1.8rem;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .biometric-btn:hover {
+    background-color: #3EC894;
+    box-shadow: 0 0 10px #3EC894;
+  }
+
+  .modal {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    left: 0; top: 0;
+    width: 100%; height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    justify-content: center;
     align-items: center;
-    gap: 0.5rem;
   }
 
-  @media (max-width: 600px) {
+  .modal-content {
+    background-color: var(--header-bg);
+    padding: 2rem;
+    border-radius: 12px;
+    max-width: 600px;
+    width: 90%;
+    overflow-y: auto;
+    max-height: 80vh;
+    box-shadow: 0 0 20px rgba(110, 241, 179, 0.2);
+  }
+
+  .avatar-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: center;
+  }
+
+  .avatar-option {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+
+  .avatar-option:hover {
+    border-color: var(--accent);
+  }
+
+  .close-modal {
+    background: none;
+    color: var(--accent);
+    border: none;
+    font-size: 1rem;
+    float: right;
+    cursor: pointer;
+    font-weight: bold;
+  }
+
+  hr {
+    display: none;
+  }
+
+  @media (max-width: 768px) {
     .form-row .form-group {
       min-width: 100%;
     }
+
     .form-actions {
       text-align: center;
+    }
+
+    .profile-container {
+      padding: 1.5rem 1rem;
     }
   }
 </style>
@@ -107,7 +202,7 @@
   <div class="profile-avatar">
     <img src="{{ url_for('static', filename='images/avatars/' ~ user.Avatar) }}" alt="Avatar" id="avatar-preview">
     <br>
-    <button type="button" onclick="toggleAvatarPicker()">Cambiar avatar</button>
+    <button type="button" onclick="openAvatarModal()">Cambiar avatar</button>
   </div>
 
   <form method="post" class="profile-form">
@@ -124,52 +219,130 @@
       <div class="form-group">{{ form.password.label }}{{ form.password }}</div>
       <div class="form-group">{{ form.confirm_password.label }}{{ form.confirm_password }}</div>
     </div>
-    <div class="biometric-toggle">
-      <input type="checkbox" id="enableBiometrics" onchange="startBiometricRegistration()">
-      <label for="enableBiometrics">Activar acceso biométrico</label>
+
+    <div class="form-group" style="display: none;">
+      {{ form.avatar.label }}{{ form.avatar }}
     </div>
+
     <div class="form-actions">
-      {{ form.submit(class_='btn btn-primary') }}
+      {{ form.submit(class_='btn') }}
     </div>
   </form>
+
+  <div class="biometric-section">
+    <h3>Registrar Biometría</h3>
+    <button class="biometric-btn" onclick="startBiometricRegistration()">🔐 Registrar biometría</button>
+    <p id="bio-register-status" style="margin-top: 1rem; font-weight: bold;"></p>
+  </div>
+</div>
+
+<div class="modal" id="avatarModal">
+  <div class="modal-content">
+    <button class="close-modal" onclick="closeAvatarModal()">✖</button>
+    <h3 style="text-align:center;">Elige tu avatar</h3>
+    <div class="avatar-grid">
+      {% for filename, label in form.avatar.choices %}
+        <img src="{{ url_for('static', filename='images/avatars/' ~ filename) }}"
+             alt="{{ label }}"
+             class="avatar-option"
+             onclick="selectAvatar('{{ filename }}')">
+      {% endfor %}
+    </div>
+  </div>
 </div>
 
 <script>
-  function toggleAvatarPicker() {
-    alert("Aquí se mostraría una galería para elegir avatar.");
+  function getCSRFToken() {
+    return document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+  }
+
+  function openAvatarModal() {
+    document.getElementById("avatarModal").style.display = "flex";
+  }
+
+  function closeAvatarModal() {
+    document.getElementById("avatarModal").style.display = "none";
+  }
+
+  function selectAvatar(filename) {
+    const avatarPreview = document.getElementById("avatar-preview");
+    avatarPreview.src = `/static/images/avatars/${filename}`;
+    document.querySelector("input[name='avatar']").value = filename;
+    closeAvatarModal();
   }
 
   async function startBiometricRegistration() {
-    if (!window.PublicKeyCredential) {
-      alert("Tu navegador no soporta autenticación biométrica.");
-      return;
-    }
+    const status = document.getElementById("bio-register-status");
+    status.style.color = "white";
+    status.textContent = "⏳ Iniciando registro...";
 
-    const response = await fetch("/biometric/start-registration");
-    const options = await response.json();
+    try {
+      const res = await fetch("/biometric/start-registration");
+      const contentType = res.headers.get("content-type");
 
-    options.challenge = Uint8Array.from(atob(options.challenge), c => c.charCodeAt(0));
-    options.user.id = Uint8Array.from(atob(options.user.id), c => c.charCodeAt(0));
-
-    const credential = await navigator.credentials.create({ publicKey: options });
-
-    const credentialData = {
-      id: credential.id,
-      rawId: btoa(String.fromCharCode(...new Uint8Array(credential.rawId))),
-      type: credential.type,
-      response: {
-        clientDataJSON: btoa(String.fromCharCode(...new Uint8Array(credential.response.clientDataJSON))),
-        attestationObject: btoa(String.fromCharCode(...new Uint8Array(credential.response.attestationObject)))
+      if (!res.ok || !contentType || !contentType.includes("application/json")) {
+        const text = await res.text();
+        throw new Error("Error al iniciar registro: " + text.slice(0, 100));
       }
-    };
 
-    await fetch('/biometric/finish-registration', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(credentialData)
-    });
+      const options = await res.json();
+      options.challenge = toBuffer(options.challenge);
+      options.user.id = toBuffer(options.user.id);
 
-    alert("Biometría activada correctamente ✅");
+      const credential = await navigator.credentials.create({ publicKey: options });
+
+      const payload = {
+        id: credential.id,
+        rawId: toBase64url(credential.rawId),
+        type: credential.type,
+        response: {
+          attestationObject: toBase64url(credential.response.attestationObject),
+          clientDataJSON: toBase64url(credential.response.clientDataJSON)
+        }
+      };
+
+      const csrfToken = getCSRFToken();
+
+      const finish = await fetch("/biometric/finish-registration", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": csrfToken
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const finishType = finish.headers.get("content-type");
+      if (!finish.ok || !finishType || !finishType.includes("application/json")) {
+        const text = await finish.text();
+        throw new Error("Error al finalizar registro: " + text.slice(0, 100));
+      }
+
+      const result = await finish.json();
+      if (result.success) {
+        status.style.color = "green";
+        status.textContent = "✅ " + result.message;
+      } else {
+        status.style.color = "red";
+        status.textContent = "❌ " + (result.error || "Error al registrar");
+      }
+
+    } catch (err) {
+      console.error(err);
+      status.style.color = "red";
+      status.textContent = "❌ " + (err.message || "Error inesperado");
+    }
+  }
+
+  function toBuffer(base64url) {
+    const padding = '='.repeat((4 - base64url.length % 4) % 4);
+    const base64 = base64url.replace(/-/g, '+').replace(/_/g, '/') + padding;
+    return Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+  }
+
+  function toBase64url(buffer) {
+    const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+    return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   }
 </script>
 {% endblock %}

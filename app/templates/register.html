@@ -14,11 +14,11 @@
 
     body {
       background-color: #0A0E17;
-      height: 100vh;
+      min-height: 100vh;
       display: flex;
       justify-content: center;
       align-items: center;
-      overflow: hidden;
+      padding: 1rem;
       position: relative;
     }
 
@@ -74,10 +74,7 @@
       flex-direction: column;
     }
 
-    .form-group input[type="text"],
-    .form-group input[type="email"],
-    .form-group input[type="password"],
-    .form-group input[type="tel"] {
+    .input {
       padding: 0.8rem;
       border: 1px solid #6EF1B3;
       border-radius: 8px;
@@ -86,28 +83,15 @@
       font-size: 1rem;
     }
 
-    .form-group input::placeholder {
+    .input::placeholder {
       color: #6EF1B3;
     }
 
-    .checkbox-inline {
+    .checkbox-inline, .checkbox-group {
       display: flex;
       align-items: center;
       gap: 0.5rem;
       justify-content: flex-start;
-    }
-
-    .checkbox-group {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      margin-top: 0.5rem;
-      justify-content: flex-start;
-    }
-
-    .checkbox-group label {
-      font-size: 0.9rem;
-      color: #ffffff;
     }
 
     .register-btn {
@@ -128,9 +112,43 @@
       box-shadow: 0 0 10px #3EC894;
     }
 
+    .alert {
+      padding: 0.8rem;
+      border-radius: 8px;
+      font-weight: bold;
+      color: white;
+      margin-bottom: 1rem;
+    }
+
+    .alert-success {
+      background-color: #3EC894;
+    }
+
+    .alert-danger {
+      background-color: #E74C3C;
+    }
+
+    @media (max-width: 1024px) {
+      .form-row {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
     @media (max-width: 768px) {
       .form-row {
         grid-template-columns: 1fr;
+      }
+
+      .register-container {
+        padding: 1.5rem 1rem;
+      }
+
+      .logo {
+        width: 150px;
+      }
+
+      .register-title {
+        font-size: 1.5rem;
       }
     }
   </style>
@@ -141,62 +159,46 @@
   <div class="register-container">
     <img src="/static/images/logo_cryptotfg.png" alt="Cryptotfg Logo" class="logo" />
     <h2 class="register-title">Registrarse</h2>
-    <form onsubmit="return handleRegister(event)" autocomplete="off">
-      <!-- Fila 1: Nombre y apellidos -->
+
+    {% with messages = get_flashed_messages(with_categories=True) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('auth.register') }}" autocomplete="off">
+      {{ form.csrf_token }}
+
       <div class="form-row">
-        <div class="form-group">
-          <input type="text" placeholder="Nombre" required autocomplete="off">
-        </div>
-        <div class="form-group">
-          <input type="text" placeholder="Primer Apellido" required autocomplete="off">
-        </div>
-        <div class="form-group">
-          <input type="text" placeholder="Segundo Apellido" required autocomplete="off">
-        </div>
+        <div class="form-group">{{ form.first_name(class="input", placeholder="Nombre") }}</div>
+        <div class="form-group">{{ form.last_name(class="input", placeholder="Primer Apellido") }}</div>
+        <div class="form-group">{{ form.second_last_name(class="input", placeholder="Segundo Apellido") }}</div>
       </div>
 
-      <!-- Fila 2: Correo, teléfono, mayor de edad -->
       <div class="form-row">
-        <div class="form-group">
-          <input type="email" placeholder="Correo" required autocomplete="off">
-        </div>
-        <div class="form-group">
-          <input type="tel" placeholder="Teléfono" required autocomplete="off">
-        </div>
+        <div class="form-group">{{ form.email(class="input", placeholder="Correo") }}</div>
+        <div class="form-group">{{ form.phone(class="input", placeholder="Teléfono") }}</div>
         <div class="form-group checkbox-inline">
-          <input type="checkbox" id="mayorEdad" required>
+          {{ form.is_adult(id="mayorEdad") }}
           <label for="mayorEdad">¿Eres mayor de edad?</label>
         </div>
       </div>
 
-      <!-- Fila 3: Contraseña y confirmar contraseña -->
-      <div class="form-row" style="grid-template-columns: 1fr 1fr 1fr;">
-        <div class="form-group">
-          <input type="password" placeholder="Contraseña" required autocomplete="new-password">
-        </div>
-        <div class="form-group">
-          <input type="password" placeholder="Confirmar Contraseña" required autocomplete="new-password">
-        </div>
+      <div class="form-row">
+        <div class="form-group">{{ form.password(class="input", placeholder="Contraseña") }}</div>
+        <div class="form-group">{{ form.confirm_password(class="input", placeholder="Confirmar contraseña") }}</div>
         <div></div>
       </div>
 
-      <!-- Términos y condiciones -->
       <div class="checkbox-group">
-        <input type="checkbox" id="terminos" required>
+        {{ form.accept_terms(id="terminos") }}
         <label for="terminos">Acepto los términos y condiciones</label>
       </div>
 
-      <!-- Botón -->
-      <button type="submit" class="register-btn">Registrarse</button>
+      {{ form.submit(class="register-btn") }}
     </form>
   </div>
-
-  <script>
-    function handleRegister(event) {
-      event.preventDefault();
-      alert("Registro simulado con éxito.");
-      return false;
-    }
-  </script>
 </body>
 </html>

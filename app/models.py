@@ -20,6 +20,7 @@ class User(db.Model):
     Avatar = db.Column(db.String(200), nullable=False, default='default_dino.png')
     BiometricCredentialID = db.Column(db.String(500), nullable=True)
     BiometricPublicKey = db.Column(db.String(2000), nullable=True)
+    SignCount = db.Column(db.Integer, default=0)
 
     def set_password(self, password):
         self.PasswordHash = generate_password_hash(password)
