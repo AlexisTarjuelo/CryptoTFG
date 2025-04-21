@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+{% block title %}Comparador de Criptomonedas{% endblock %}
+
+{% block content %}
+<style>
+  .btn-accent {
+    background-color: var(--accent);
+    color: #000;
+    border: none;
+  }
+
+  .btn-accent:hover {
+    background-color: #4ec79c;
+    color: #000;
+  }
+
+  #fightBanner {
+    position: fixed;
+    top: 20%;
+    left: 50%;
+    transform: translateX(-50%) scale(0.8);
+    background: var(--accent);
+    color: black;
+    font-size: 2rem;
+    font-weight: bold;
+    padding: 1rem 2rem;
+    border-radius: 1rem;
+    opacity: 0;
+    z-index: 9999;
+    pointer-events: none;
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+
+  #fightBanner.show {
+    opacity: 1;
+    transform: translateX(-50%) scale(1.1);
+  }
+
+  h1 {
+    font-size: clamp(1.5rem, 5vw, 2.2rem);
+    word-break: break-word;
+    color: var(--accent);
+  }
+
+  .crypto-select,
+  #addCryptoBtn {
+    width: 100%;
+  }
+
+  .chart-container {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  canvas {
+    width: 100% !important;
+    height: auto !important;
+  }
+
+  .range-btn {
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    background-color: transparent;
+    transition: all 0.3s ease;
+  }
+
+  .range-btn.active,
+  .range-btn:hover {
+    background-color: var(--accent);
+    color: #000;
+    box-shadow: 0 0 10px var(--accent);
+  }
+
+  .chart-select {
+    margin-bottom: 1rem;
+    max-width: 200px;
+  }
+</style>
+
+<div class="container py-4">
+  <h1 class="mb-4 text-center">Comparador de Criptomonedas</h1>
+  <div class="row g-3 mb-3" id="cryptoSelectors">
+    <div class="col-12 col-md-6 col-lg-3">
+      <select class="form-control crypto-select">
+        <option value="">Seleccionar cripto</option>
+      </select>
+    </div>
+  </div>
+  <div class="text-center">
+    <button class="btn btn-sm btn-accent mb-4" id="addCryptoBtn">+ Añadir otra cripto</button>
+  </div>
+
+  <div class="text-center mb-3">
+    <label for="chartType" class="form-label">Ver gráfico de:</label>
+    <select class="form-select chart-select mx-auto" id="chartType">
+      <option value="price">Precio</option>
+      <option value="volume">Volumen</option>
+      <option value="marketcap">Market Cap</option>
+    </select>
+  </div>
+
+  <div class="chart-container">
+    <canvas id="mainChart"></canvas>
+  </div>
+</div>
+
+<div id="fightBanner">¡FIGHT!</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+  const maxCryptos = 4;
+  const selectedCryptos = [];
+  const chartColors = ['#F7931A', '#627EEA', '#3CC8C8', '#9945FF'];
+  let mainChart;
+  let assetDataMap = {};
+
+  function fetchAssetList() {
+    $.get('/versus/assets', function(data) {
+      $('.crypto-select').each(function () {
+        const select = $(this);
+        if (select.children('option').length <= 1) {
+          data.assets.forEach(asset => {
+            select.append(`<option value="${asset.Symbol}">${asset.Name} (${asset.Symbol})</option>`);
+          });
+        }
+      });
+    });
+  }
+
+  function fetchAssetData(symbol, color) {
+    $.get(`/versus/data?symbol=${symbol}`, function(data) {
+      assetDataMap[symbol] = {
+        label: data.label,
+        dates: data.data.map(d => d[0]),
+        price: data.data.map(d => d[1]),
+        volume: data.data.map(d => d[1] * 1.2),
+        marketcap: data.data.map(d => d[1] * 1000),
+        color
+      };
+      updateMainChart();
+    });
+  }
+
+  function getChartOptions() {
+    return {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: '#6EF1B3' } } },
+      scales: {
+        x: { ticks: { color: '#ccc' }, grid: { color: '#333' } },
+        y: { ticks: { color: '#ccc' }, grid: { color: '#333' } }
+      }
+    };
+  }
+
+  function updateMainChart() {
+    const type = $('#chartType').val();
+    const datasets = Object.values(assetDataMap).map(data => ({
+      label: data.label,
+      data: data[type],
+      borderColor: data.color,
+      backgroundColor: data.color + '22',
+      fill: false,
+      tension: 0.3
+    }));
+
+    const labels = Object.values(assetDataMap)[0]?.dates || [];
+
+    if (mainChart) {
+      mainChart.data.labels = labels;
+      mainChart.data.datasets = datasets;
+      mainChart.update();
+    } else {
+      mainChart = new Chart(document.getElementById('mainChart'), {
+        type: 'line',
+        data: { labels, datasets },
+        options: getChartOptions()
+      });
+    }
+  }
+
+  function showFightBanner() {
+    const banner = document.getElementById("fightBanner");
+    banner.classList.add("show");
+    setTimeout(() => banner.classList.remove("show"), 1500);
+  }
+
+  $('#addCryptoBtn').click(function () {
+    const count = $('.crypto-select').length;
+    if (count >= maxCryptos) return;
+
+    const newSelect = $(`
+      <div class="col-12 col-md-6 col-lg-3">
+        <select class="form-control crypto-select">
+          <option value="">Seleccionar cripto</option>
+        </select>
+      </div>
+    `);
+
+    $('#cryptoSelectors').append(newSelect);
+    fetchAssetList();
+
+    newSelect.find('select').change(function () {
+      const symbol = $(this).val();
+      if (symbol && !selectedCryptos.includes(symbol)) {
+        selectedCryptos.push(symbol);
+        const color = chartColors[selectedCryptos.length - 1];
+        fetchAssetData(symbol, color);
+        showFightBanner();
+      }
+    });
+  });
+
+  fetchAssetList();
+
+  $('.crypto-select').change(function () {
+    const symbol = $(this).val();
+    if (symbol && !selectedCryptos.includes(symbol)) {
+      selectedCryptos.push(symbol);
+      const color = chartColors[selectedCryptos.length - 1];
+      fetchAssetData(symbol, color);
+      showFightBanner();
+    }
+  });
+
+  $('#chartType').change(() => updateMainChart());
+</script>
+{% endblock %}

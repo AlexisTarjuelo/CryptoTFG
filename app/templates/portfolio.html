@@ -1,0 +1,351 @@
+{% extends "base.html" %}
+{% block title %}Mi Portfolio - Cryptotfg{% endblock %}
+
+{% block content %}
+<style>
+  :root {
+    --accent: #6EF1B3;
+    --card: #1e1e2f;
+    --text: #ffffff;
+    --border: #2e2e3f;
+    --background: #121212;
+    --bg-color: #1e1e2f;
+    --header-bg: #141421;
+    --table-row-odd: #181828;
+    --table-row-even: #202030;
+    --text-color: #ffffff;
+  }
+
+  body.light {
+    --accent: #13c291;
+    --card: #ffffff;
+    --text: #101010;
+    --border: #ccc;
+    --background: #f4f4f4;
+    --bg-color: #ffffff;
+    --header-bg: #e9ecef;
+    --table-row-odd: #f2f2f2;
+    --table-row-even: #ffffff;
+    --text-color: #101010;
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--text-color);
+  }
+
+  .card, .form-control, .modal-content {
+    background-color: var(--card);
+    border-color: var(--border);
+    color: var(--text-color);
+  }
+
+  .card-title, h4, h5, .modal-title {
+    color: var(--accent);
+  }
+
+  .btn-accent {
+    background-color: var(--accent);
+    color: #000;
+    border: none;
+  }
+
+  .btn-accent:hover {
+    background-color: #4ec79c;
+    color: #000;
+  }
+
+  .text-accent {
+    color: var(--accent);
+  }
+
+  .crypto-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+    background-color: var(--bg-color);
+    border: 1px solid var(--accent);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .crypto-table th, .crypto-table td {
+    padding: 1rem;
+    text-align: left;
+  }
+
+  .crypto-table thead {
+    background-color: var(--header-bg);
+    color: var(--accent);
+  }
+
+  .crypto-table tbody tr:nth-child(odd) {
+    background-color: var(--table-row-odd);
+  }
+
+  .crypto-table tbody tr:nth-child(even) {
+    background-color: var(--table-row-even);
+  }
+
+  .crypto-table tbody td.positive {
+    color: var(--accent);
+  }
+
+  .crypto-table tbody td.negative {
+    color: #ff6b6b;
+  }
+
+  .chart-wrapper {
+    max-width: 300px;
+    margin: auto;
+  }
+
+  @media (max-width: 400px) {
+    .chart-wrapper {
+      max-width: 220px;
+    }
+  }
+</style>
+
+<div class="container py-4">
+  <h1 class="mb-4 text-accent">Mi Portfolio</h1>
+
+  <!-- Resumen -->
+  <div class="row mb-4">
+    <div class="col-md-4">
+      <div class="card text-center">
+        <div class="card-body">
+          <h5 class="card-title">Valor total</h5>
+          <p class="fs-4 fw-bold">${{ total_value }}</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card text-center">
+        <div class="card-body">
+          <h5 class="card-title">Ganancia/Pérdida</h5>
+          <p class="fs-4 fw-bold {{ 'positive' if gain_loss_pct >= 0 else 'negative' }}">
+            {{ '+' if gain_loss_pct >= 0 else '' }}{{ gain_loss_pct }}%
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card text-center">
+        <div class="card-body">
+          <h5 class="card-title">Activos</h5>
+          <p class="fs-4 fw-bold" id="assetCount">{{ portfolio|length }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gráfico + tabla en misma fila -->
+  <div class="row mb-5">
+    <!-- Gráfico -->
+    <div class="col-md-4 d-flex flex-column h-100">
+      <h4 class="mb-3">Distribución por Cripto</h4>
+      <div class="card p-3 chart-wrapper flex-grow-1 d-flex align-items-center justify-content-center">
+        <canvas id="portfolioChart" style="max-width: 100%; height: auto;"></canvas>
+      </div>
+    </div>
+
+    <!-- Tabla -->
+    <div class="col-md-8 d-flex flex-column h-100">
+      <h4 class="mb-3">Mis activos</h4>
+      <div class="table-responsive flex-grow-1">
+        <table class="crypto-table" id="portfolioTable">
+          <thead>
+            <tr>
+              <th>Cripto</th>
+              <th>Cantidad</th>
+              <th>Valor actual</th>
+              <th>Valor comprado</th>
+              <th>Ganancia/Pérdida</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for entry, name, symbol, logo in portfolio %}
+            {% set qty = entry.Quantity %}
+            {% set actual = entry.CurrentValueUSD or 0 %}
+            {% set purchase = entry.PurchaseValueUSD or 1 %}
+            {% set diff = ((actual - purchase) / purchase) * 100 %}
+            <tr>
+              <td>{{ name }} ({{ symbol }})</td>
+              <td>{{ qty }} {{ symbol }}</td>
+              <td>${{ '%.2f'|format(actual) }}</td>
+              <td>${{ '%.2f'|format(purchase) }}</td>
+              <td class="{{ 'positive' if diff >= 0 else 'negative' }}">
+                {{ '+' if diff >= 0 else '' }}{{ '%.2f'|format(diff) }}%
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Simulador de compra -->
+  <div class="mb-5">
+    <h4 class="mb-3">Comprar cripto con tarjeta (simulación)</h4>
+    <div class="card p-4 shadow-sm">
+      <form>
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label for="cryptoSelect" class="form-label">Selecciona cripto</label>
+            <select class="form-control" id="cryptoSelect">
+              <option value="BTC">Bitcoin (BTC)</option>
+              <option value="ETH">Ethereum (ETH)</option>
+              <option value="ADA">Cardano (ADA)</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label for="amount" class="form-label">Cantidad en USD</label>
+            <input type="number" class="form-control" id="amount" placeholder="Ej: 100">
+          </div>
+          <div class="col-md-4 d-flex align-items-end">
+            <button type="button" class="btn btn-accent w-100" onclick="openPaymentModal()">Simular compra</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="purchaseModal" tabindex="-1" aria-labelledby="purchaseModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content text-white">
+      <div class="modal-header">
+        <h5 class="modal-title" id="purchaseModalLabel">Introduce los datos de tu tarjeta</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <form id="cardForm">
+          <div class="mb-3">
+            <label for="cardNumber" class="form-label">Número de tarjeta</label>
+            <input type="text" class="form-control" id="cardNumber" placeholder="Ej: 4111 1111 1111 1111">
+          </div>
+          <div class="mb-3">
+            <label for="cardHolder" class="form-label">Nombre en la tarjeta</label>
+            <input type="text" class="form-control" id="cardHolder">
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="cardExpiry" class="form-label">Expira</label>
+              <input type="text" class="form-control" id="cardExpiry" placeholder="MM/AA">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="cardCvv" class="form-label">CVV</label>
+              <input type="text" class="form-control" id="cardCvv" placeholder="123">
+            </div>
+          </div>
+        </form>
+        <div id="processingState" class="d-none text-center">
+          <p>Procesando transacción...</p>
+          <div class="spinner-border text-accent" role="status">
+            <span class="visually-hidden">Cargando...</span>
+          </div>
+        </div>
+        <div id="completedState" class="d-none">
+          <p>Compra simulada realizada correctamente.</p>
+          <p>Has comprado <strong id="cryptoQty"></strong> <span id="cryptoName"></span>.</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="payButton" class="btn btn-accent" onclick="handlePayment()">Pagar</button>
+        <button class="btn btn-secondary d-none" data-bs-dismiss="modal" id="closeBtn" onclick="addToPortfolio()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  let selectedCrypto = '', usdAmount = 0, cryptoQty = 0, unit = '';
+
+  function openPaymentModal() {
+    const amount = parseFloat(document.getElementById('amount').value || 0);
+    if (amount <= 0) return alert("Introduce una cantidad válida.");
+    usdAmount = amount;
+    selectedCrypto = document.getElementById('cryptoSelect').value;
+    unit = selectedCrypto;
+
+    document.getElementById('cardForm').reset();
+    document.getElementById('processingState').classList.add('d-none');
+    document.getElementById('completedState').classList.add('d-none');
+    document.getElementById('cardForm').classList.remove('d-none');
+    document.getElementById('payButton').classList.remove('d-none');
+    document.getElementById('closeBtn').classList.add('d-none');
+
+    new bootstrap.Modal(document.getElementById('purchaseModal')).show();
+  }
+
+  function handlePayment() {
+    document.getElementById('cardForm').classList.add('d-none');
+    document.getElementById('processingState').classList.remove('d-none');
+    document.getElementById('payButton').classList.add('d-none');
+
+    const priceMap = { BTC: 40000, ETH: 2000, ADA: 0.4 };
+    const price = priceMap[selectedCrypto] || 1;
+    cryptoQty = (usdAmount / price).toFixed(6);
+
+    setTimeout(() => {
+      document.getElementById("cryptoQty").textContent = cryptoQty;
+      document.getElementById("cryptoName").textContent = unit;
+      document.getElementById('processingState').classList.add('d-none');
+      document.getElementById('completedState').classList.remove('d-none');
+      document.getElementById('closeBtn').classList.remove('d-none');
+    }, 2000);
+  }
+
+  function addToPortfolio() {
+    fetch('/portfolio/add', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        symbol: unit,
+        quantity: parseFloat(cryptoQty),
+        purchase_usd: parseFloat(usdAmount)
+      })
+    }).then(res => res.json()).then(data => {
+      if (data.success) location.reload();
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    const ctx = document.getElementById("portfolioChart");
+    const chart = new Chart(ctx, {
+      type: "pie",
+      data: {
+        labels: [{% for entry, name, symbol, logo in portfolio %}"{{ name }} ({{ symbol }})"{% if not loop.last %},{% endif %}{% endfor %}],
+        datasets: [{
+          data: [{% for entry, name, symbol, logo in portfolio %}{{ entry.CurrentValueUSD or 0 }}{% if not loop.last %},{% endif %}{% endfor %}],
+          backgroundColor: ["#FF9800", "#03A9F4", "#4CAF50", "#9C27B0", "#FFC107", "#E91E63"]
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: {
+            position: 'top',
+            labels: {
+              color: getComputedStyle(document.body).getPropertyValue('--text-color')
+            }
+          }
+        }
+      }
+    });
+
+    const observer = new MutationObserver(() => {
+      chart.options.plugins.legend.labels.color = getComputedStyle(document.body).getPropertyValue('--text-color');
+      chart.update();
+    });
+
+    observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+  });
+</script>
+{% endblock %}

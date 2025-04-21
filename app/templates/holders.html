@@ -1,0 +1,296 @@
+{% extends "base.html" %}
+{% block title %}Holders - Cryptotfg{% endblock %}
+
+{% block content %}
+<style>
+  body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+  }
+
+  .form-control, .card, .btn, .stat-card {
+    background-color: var(--header-bg);
+    border-color: var(--accent);
+    color: var(--text-color);
+  }
+
+  .filter-select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 0.2rem rgba(110, 241, 179, 0.25);
+  }
+
+  .btn-accent {
+    background-color: var(--accent);
+    color: #000;
+    border: none;
+  }
+
+  .btn-accent:hover {
+    background-color: #4ec79c;
+    color: #000;
+  }
+
+  .text-accent {
+    color: var(--accent);
+  }
+
+  .crypto-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 2rem;
+    background-color: var(--header-bg);
+    border: 1px solid var(--accent);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .crypto-table th, .crypto-table td {
+    padding: 1rem;
+    text-align: left;
+  }
+
+  .crypto-table thead {
+    background-color: var(--card);
+    color: var(--accent);
+  }
+
+  .crypto-table tbody tr:nth-child(odd) {
+    background-color: var(--table-row-odd);
+  }
+
+  .crypto-table tbody tr:nth-child(even) {
+    background-color: var(--table-row-even);
+  }
+
+  .crypto-table tbody td {
+    color: var(--text-color);
+  }
+
+  .stat-card {
+    border: 1px solid var(--accent);
+    border-radius: 12px;
+    padding: 1rem;
+    height: 100%;
+    color: var(--text-color);
+  }
+
+  .top-grid, .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .top-stats {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+  }
+
+  #filterWarning {
+    color: #ff6b6b;
+    font-weight: bold;
+    display: none;
+    margin-top: 1rem;
+  }
+</style>
+
+<div class="container py-4">
+  <h1 class="mb-4 text-accent">Holders por Activo</h1>
+
+  <div class="top-grid">
+    <div class="stat-card top-stats">
+      <h4>Total de Holders</h4>
+      <p id="totalHolders">-</p>
+      <h4>Total Acumulado</h4>
+      <p id="totalBalance">-</p>
+      <h4>Categoría más Común</h4>
+      <p id="mostCommonCategory">-</p>
+    </div>
+    <div class="stat-card">
+      <canvas id="pieChart"></canvas>
+    </div>
+  </div>
+
+  <div class="stat-grid">
+    <div class="stat-card">
+      <canvas id="barChart"></canvas>
+    </div>
+    <div class="stat-card">
+      <canvas id="balanceChart"></canvas>
+    </div>
+  </div>
+
+  <div class="row g-3 mb-4 align-items-end">
+    <div class="col-md-4">
+      <label for="assetFilter" class="form-label">Activo:</label>
+      <select class="form-control filter-select" id="assetFilter">
+        <option value="">-- Todos los activos --</option>
+        {% for asset in assets %}
+          <option value="{{ asset.Symbol }}">{{ asset.Name }} ({{ asset.Symbol }})</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-4">
+      <label for="categoryFilter" class="form-label">Categoría:</label>
+      <select class="form-control filter-select" id="categoryFilter">
+        <option value="">-- Todas las categorías --</option>
+        {% for cat in categories %}
+          <option value="{{ cat.Name }}">{{ cat.Name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-2">
+      <button id="applyFiltersBtn" class="btn btn-accent w-100" disabled>Buscar</button>
+    </div>
+    <div class="col-md-2">
+      <button id="clearFiltersBtn" class="btn btn-secondary w-100">Limpiar</button>
+    </div>
+  </div>
+
+  <div id="filterWarning">⚠️ Selecciona un activo y una categoría para buscar.</div>
+
+  <div class="table-responsive">
+    <table class="crypto-table" id="holdersTable">
+      <thead>
+        <tr>
+          <th>Dirección</th>
+          <th>Balance</th>
+          <th>Cripto</th>
+          <th>Categoría</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const assetFilter = document.getElementById("assetFilter");
+  const categoryFilter = document.getElementById("categoryFilter");
+  const applyBtn = document.getElementById("applyFiltersBtn");
+  const clearBtn = document.getElementById("clearFiltersBtn");
+  const tableBody = document.querySelector("#holdersTable tbody");
+  const totalHoldersEl = document.getElementById("totalHolders");
+  const totalBalanceEl = document.getElementById("totalBalance");
+  const mostCommonCategoryEl = document.getElementById("mostCommonCategory");
+  const filterWarning = document.getElementById("filterWarning");
+
+  let holdersData = [];
+  let pieChart, barChart, balanceChart;
+
+  const categoryColors = {
+    "Tyrannosaurus Rex": "#FF4C4C",
+    "Sin categoría": "#FFD966",
+    "Compsognathus": "#4DD0E1",
+    "Triceratops": "#4CAF50",
+    "Diplodocus": "#9575CD",
+    "Velociraptor": "#FF9800"
+  };
+
+  window.addEventListener("DOMContentLoaded", async () => {
+    const response = await fetch("/holders/data");
+    holdersData = await response.json();
+    updateStats(holdersData);
+  });
+
+  function validateFilters() {
+    const isValid = assetFilter.value && categoryFilter.value;
+    applyBtn.disabled = !isValid;
+  }
+
+  assetFilter.addEventListener("change", validateFilters);
+  categoryFilter.addEventListener("change", validateFilters);
+
+  applyBtn.addEventListener("click", () => {
+    const asset = assetFilter.value.trim();
+    const category = categoryFilter.value.trim();
+
+    if (!asset || !category) {
+      filterWarning.style.display = "block";
+      return;
+    }
+
+    filterWarning.style.display = "none";
+    const filtered = filterData();
+    renderTable(filtered);
+    updateStats(filtered);
+  });
+
+  clearBtn.addEventListener("click", () => {
+    assetFilter.value = "";
+    categoryFilter.value = "";
+    tableBody.innerHTML = "";
+    filterWarning.style.display = "none";
+    applyBtn.disabled = true;
+  });
+
+  function filterData() {
+    const asset = assetFilter.value;
+    const category = categoryFilter.value;
+    return holdersData.filter(h =>
+      (asset === "" || h.symbol.toLowerCase() === asset.toLowerCase()) &&
+      (category === "" || h.category.toLowerCase() === category.toLowerCase())
+    );
+  }
+
+  function renderTable(data) {
+    tableBody.innerHTML = "";
+    if (data.length === 0) {
+      tableBody.innerHTML = `<tr><td colspan="4">⚠️ No se encontraron resultados.</td></tr>`;
+      return;
+    }
+    data.forEach(holder => {
+      tableBody.innerHTML += `
+        <tr>
+          <td><code>${holder.address}</code></td>
+          <td>${holder.balance.toFixed(4)}</td>
+          <td>${holder.asset}</td>
+          <td>${holder.category}</td>
+        </tr>`;
+    });
+  }
+
+  function updateStats(data) {
+    const total = data.length;
+    const balance = data.reduce((sum, h) => sum + h.balance, 0);
+    const categoryCounts = {};
+    data.forEach(h => categoryCounts[h.category] = (categoryCounts[h.category] || 0) + 1);
+    const mostCommon = Object.entries(categoryCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || "-";
+
+    totalHoldersEl.textContent = total;
+    totalBalanceEl.textContent = balance.toFixed(2);
+    mostCommonCategoryEl.textContent = mostCommon;
+
+    const labels = Object.keys(categoryCounts);
+    const values = Object.values(categoryCounts);
+    const balances = labels.map(label =>
+      data.filter(h => h.category === label).reduce((sum, h) => sum + h.balance, 0)
+    );
+    const colors = labels.map(label => categoryColors[label] || "#6EF1B3");
+
+    if (pieChart) pieChart.destroy();
+    pieChart = new Chart(document.getElementById("pieChart"), {
+      type: "pie",
+      data: { labels, datasets: [{ data: values, backgroundColor: colors }] },
+      options: { responsive: true, plugins: { legend: { position: "top" } } }
+    });
+
+    if (barChart) barChart.destroy();
+    barChart = new Chart(document.getElementById("barChart"), {
+      type: "bar",
+      data: { labels, datasets: [{ label: "Nº Holders", data: values, backgroundColor: colors }] },
+      options: { responsive: true }
+    });
+
+    if (balanceChart) balanceChart.destroy();
+    balanceChart = new Chart(document.getElementById("balanceChart"), {
+      type: "bar",
+      data: { labels, datasets: [{ label: "Balance Total", data: balances, backgroundColor: colors }] },
+      options: { responsive: true }
+    });
+  }
+</script>
+{% endblock %}
