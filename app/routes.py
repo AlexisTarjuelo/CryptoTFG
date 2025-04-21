@@ -1,12 +1,13 @@
 import os
 import base64
+from decimal import Decimal
 from functools import wraps
 
 from flask import render_template, redirect, url_for, flash, session, request, Blueprint, current_app, make_response, \
     jsonify, g
 from sqlalchemy import func
 from app import db,csrf
-from app.models import User, Asset, AssetPrice
+from app.models import User, Asset, AssetPrice, Transaction, NoticiaCripto, PortfolioAsset, Holder, HolderCategory
 from app.forms import LoginForm, RegisterForm, EditProfileForm
 #BIOMETRICO
 
@@ -241,11 +242,43 @@ def asset_detail(id_coin):
         .all()
     )
 
+    from decimal import Decimal
+    max_supply = 21000000
+    circulating_supply = 19500000
+    total_supply = max_supply
+
+    fdv = latest_price.MarketCap * (Decimal(max_supply) / Decimal(circulating_supply)) if latest_price and latest_price.MarketCap else None
+    vol_mkt_cap = (latest_price.TotalVolume / latest_price.MarketCap * Decimal(100)) if latest_price and latest_price.TotalVolume and latest_price.MarketCap else None
+
+    transactions = (
+        Transaction.query
+        .filter_by(AssetID=asset.AssetID)
+        .order_by(Transaction.Timestamp.desc())
+        .limit(10)
+        .all()
+    )
+
+    # 📰 Noticias relacionadas con el activo (por Symbol)
+    related_news = (
+        NoticiaCripto.query
+        .filter_by(Activo=asset.Symbol)
+        .order_by(NoticiaCripto.FechaPublicacion.desc())
+        .limit(5)
+        .all()
+    )
+
     return render_template(
         "asset_detail.html",
         asset=asset,
         latest_price=latest_price,
-        price_history=price_history
+        price_history=price_history,
+        transactions=transactions,
+        fdv=fdv,
+        vol_mkt_cap=vol_mkt_cap,
+        max_supply=max_supply,
+        total_supply=total_supply,
+        circulating_supply=circulating_supply,
+        related_news=related_news
     )
 
 
@@ -269,6 +302,29 @@ def search_asset():
 
     flash("Activo no encontrado.", "danger")
     return redirect(url_for('auth.dashboard'))
+
+
+@auth_bp.route('/search/suggestions')
+def search_suggestions():
+    query = request.args.get('q', '').strip().lower()
+
+    if not query or len(query) < 2:
+        return jsonify([])
+
+    suggestions = Asset.query.filter(
+        (Asset.Name.ilike(f"%{query}%")) |
+        (Asset.Symbol.ilike(f"%{query}%")) |
+        (Asset.id_coin.ilike(f"%{query}%"))
+    ).limit(8).all()
+
+    return jsonify([
+        {
+            "name": asset.Name,
+            "symbol": asset.Symbol,
+            "id_coin": asset.id_coin
+        } for asset in suggestions
+    ])
+
 
 
 @auth_bp.route('/biometric/start-registration')
@@ -460,4 +516,163 @@ def finish_authentication():
         print("❌ Excepción en autenticación biométrica:", str(e))
         return jsonify({"success": False, "error": "Error al procesar autenticación"}), 500
 
+
+@auth_bp.route('/versus')
+def versus():
+    return render_template('versus.html')
+
+@auth_bp.route('/versus/assets')
+def get_asset_list():
+    assets = Asset.query.with_entities(Asset.Symbol, Asset.Name).all()
+    return jsonify({
+        "assets": [{"Symbol": s, "Name": n} for s, n in assets]
+    })
+
+
+@auth_bp.route('/versus/data')
+def get_asset_data():
+    symbol = request.args.get('symbol')
+
+    if not symbol:
+        return jsonify({"error": "No symbol provided"}), 400
+
+    asset = Asset.query.filter_by(Symbol=symbol).first()
+    if not asset:
+        return jsonify({"error": "Asset not found"}), 404
+
+    history = (
+        db.session.query(AssetPrice.RecordedAt, AssetPrice.PriceUSD)
+        .filter_by(AssetID=asset.AssetID)
+        .order_by(AssetPrice.RecordedAt.asc())
+        .limit(180)  # Puedes ajustar este límite
+        .all()
+    )
+
+    data = [
+        [dt.strftime('%Y-%m-%d'), float(price)]
+        for dt, price in history if price is not None
+    ]
+
+    return jsonify({
+        "label": asset.Name,
+        "symbol": asset.Symbol,
+        "data": data
+    })
+
+
+@auth_bp.route('/portfolio')
+@login_required
+def portfolio():
+    user = User.query.get(session['user_id'])
+
+    portfolio_entries = (
+        db.session.query(
+            PortfolioAsset,
+            Asset.Name,
+            Asset.Symbol,
+            Asset.LogoURL
+        )
+        .join(Asset, PortfolioAsset.AssetID == Asset.AssetID)
+        .filter(PortfolioAsset.UserID == user.UserID)
+        .all()
+    )
+
+    total_value = sum(float(entry.PortfolioAsset.CurrentValueUSD or 0) for entry, _, _, _ in portfolio_entries)
+    gain_loss = sum(
+        ((float(entry.PortfolioAsset.CurrentValueUSD or 0) - float(entry.PortfolioAsset.PurchaseValueUSD or 0)) / float(entry.PortfolioAsset.PurchaseValueUSD or 1)) * 100
+        for entry, _, _, _ in portfolio_entries
+    )
+    gain_loss_pct = round(gain_loss / len(portfolio_entries), 2) if portfolio_entries else 0
+
+    return render_template('portfolio.html',
+        portfolio=portfolio_entries,
+        total_value=round(total_value, 2),
+        gain_loss_pct=gain_loss_pct
+    )
+
+@auth_bp.route('/portfolio/add', methods=['POST'])
+@login_required
+def add_to_portfolio():
+    data = request.get_json()
+    user_id = session['user_id']
+
+    asset = Asset.query.filter_by(Symbol=data['symbol']).first()
+    if not asset:
+        return jsonify({"error": "Asset not found"}), 404
+
+    new_entry = PortfolioAsset(
+        UserID=user_id,
+        AssetID=asset.AssetID,
+        Quantity=data['quantity'],
+        PurchaseValueUSD=data['purchase_usd'],
+        CurrentValueUSD=data['purchase_usd']  # puede actualizarse más adelante
+    )
+    db.session.add(new_entry)
+    db.session.commit()
+
+    return jsonify({"success": True})
+
+@auth_bp.route('/holders')
+def holders_view():
+    assets = Asset.query.order_by(Asset.Symbol).all()
+    categories = HolderCategory.query.order_by(HolderCategory.MinBalance).all()
+    return render_template("holders.html", assets=assets, categories=categories)
+
+@auth_bp.route('/holders/data')
+def holders_data():
+    holders = (
+        db.session.query(Holder)
+        .join(Asset, Holder.AssetID == Asset.AssetID)
+        .outerjoin(HolderCategory, Holder.CategoryID == HolderCategory.CategoryID)
+        .all()
+    )
+
+    holders_json = []
+    for h in holders:
+        holders_json.append({
+            "address": h.Address,
+            "balance": float(h.Balance),
+            "asset": f"{h.asset.Name} ({h.asset.Symbol})",
+            "symbol": h.asset.Symbol,  # este es clave para filtrar
+            "category": h.category.Name if h.category else "Sin categoría"
+        })
+
+    return jsonify(holders_json)
+
+
+# --- NUEVA RUTA EN FLASK (routes.py o donde tengas las views) ---
+# Nueva ruta en auth_bp/routes.py o similar
+from flask import request, jsonify
+from sqlalchemy import func, desc
+from app.models import Holder, Asset, HolderCategory
+
+@auth_bp.route('/holders/summary')
+def holders_summary():
+    symbol = request.args.get("symbol")
+    category = request.args.get("category")
+
+    query = Holder.query.join(Asset).outerjoin(HolderCategory)
+
+    if symbol:
+        query = query.filter(Asset.Symbol.ilike(symbol))
+    if category:
+        query = query.filter(HolderCategory.Name.ilike(category))
+
+    holders = query.all()
+
+    total_holders = len(holders)
+    total_balance = sum(h.Balance for h in holders)
+
+    category_counts = {}
+    for h in holders:
+        cat = h.category.Name if h.category else "Sin categoría"
+        category_counts[cat] = category_counts.get(cat, 0) + 1
+
+    most_common_category = max(category_counts, key=category_counts.get) if category_counts else "-"
+
+    return jsonify({
+        "total_holders": total_holders,
+        "total_balance": total_balance,
+        "most_common_category": most_common_category
+    })
 
