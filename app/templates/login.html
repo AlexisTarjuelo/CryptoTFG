@@ -93,24 +93,39 @@
 
   .bio-login-btn {
     margin-top: 1rem;
-    padding: 0.7rem 1.5rem;
-    background-color: #3EC894;
+    background: none;
     border: none;
-    border-radius: 8px;
-    color: #0A0E17;
-    font-weight: bold;
     cursor: pointer;
-    transition: background 0.3s ease;
   }
 
-  .bio-login-btn:hover {
-    background-color: #2cb388;
+  .bio-login-btn img {
+    width: 48px;
+    transition: transform 0.2s ease;
+  }
+
+  .bio-login-btn:hover img {
+    transform: scale(1.1);
   }
 
   #bio-login-status {
     color: #fff;
     margin-top: 10px;
     font-size: 0.9rem;
+  }
+
+  .forgot-link {
+    display: block;
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+  }
+
+  .forgot-link a {
+    color: #6EF1B3;
+    text-decoration: none;
+  }
+
+  .forgot-link a:hover {
+    color: #3EC894;
   }
 
   @media (max-width: 500px) {
@@ -141,7 +156,13 @@
     {{ form.submit(class="login-btn") }}
   </form>
 
-  <button class="bio-login-btn" onclick="startBiometricLogin()">🔓 Iniciar sesión con biometría</button>
+  <div class="forgot-link">
+    <a href="{{ url_for('auth.forgot_password') }}">¿Olvidaste tu contraseña?</a>
+  </div>
+
+  <button class="bio-login-btn" onclick="startBiometricLogin()">
+    <img src="{{ url_for('static', filename='images/icono_dactilar.png') }}" alt="Biometría">
+  </button>
   <div id="bio-login-status"></div>
 
   <p class="register-link">¿No tienes cuenta? <a href="/register">Regístrate</a></p>
@@ -196,7 +217,6 @@
       }
 
       const options = await res.json();
-
       options.challenge = toBuffer(options.challenge);
       options.allowCredentials = options.allowCredentials.map(c => ({
         ...c,
@@ -232,12 +252,6 @@
         body: JSON.stringify(payload)
       });
 
-      const finishType = finish.headers.get("content-type");
-      if (!finish.ok || !finishType || !finishType.includes("application/json")) {
-        const text = await finish.text();
-        throw new Error("Error al finalizar autenticación: " + text.slice(0, 100));
-      }
-
       const result = await finish.json();
 
       if (result.success) {
@@ -256,8 +270,4 @@
     }
   }
 </script>
-
-
-
-
 {% endblock %}

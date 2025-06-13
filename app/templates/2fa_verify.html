@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Verificación 2FA - Cryptotfg{% endblock %}
+
+{% block content %}
+<style>
+  .background-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: url('/static/images/background_grande.png') no-repeat center center;
+    background-size: cover;
+    z-index: -1;
+    filter: brightness(1.1) contrast(1.2);
+  }
+
+  .verify-container {
+    background-color: rgba(10, 14, 23, 0.92);
+    border-radius: 12px;
+    padding: 2rem;
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+    box-shadow: 0 0 20px rgba(62, 200, 148, 0.4);
+    border: 1px solid #3EC894;
+    margin: 2rem auto;
+  }
+
+  .title {
+    color: #6EF1B3;
+    font-size: 1.8rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .verify-input {
+    margin-bottom: 1.5rem;
+  }
+
+  .verify-input input {
+    width: 100%;
+    padding: 0.8rem;
+    border-radius: 8px;
+    border: 1px solid #6EF1B3;
+    background-color: transparent;
+    color: #ffffff;
+    font-size: 1.1rem;
+    text-align: center;
+    letter-spacing: 4px;
+  }
+
+  .verify-input input::placeholder {
+    color: #6EF1B3;
+    text-align: center;
+  }
+
+  .verify-btn {
+    width: 100%;
+    padding: 0.8rem;
+    background-color: #6EF1B3;
+    border: none;
+    border-radius: 8px;
+    color: #0A0E17;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .verify-btn:hover {
+    background-color: #3EC894;
+    box-shadow: 0 0 10px #3EC894;
+  }
+
+  .error-text {
+    color: red;
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+  }
+
+  @media (max-width: 500px) {
+    .title {
+      font-size: 1.5rem;
+    }
+
+    .verify-container {
+      padding: 1.5rem;
+    }
+  }
+</style>
+
+<div class="background-overlay"></div>
+
+<div class="verify-container">
+  <h2 class="title">Verificación 2FA</h2>
+  <p style="color:white;">Introduce el código de 6 dígitos generado por tu app (Google Authenticator, Authy...)</p>
+
+  <form method="POST">
+    {{ form.hidden_tag() }}
+    <div class="verify-input">
+      {{ form.otp_code(placeholder="000000") }}
+      {% for error in form.otp_code.errors %}
+        <div class="error-text">{{ error }}</div>
+      {% endfor %}
+    </div>
+    {{ form.submit(class="verify-btn") }}
+  </form>
+</div>
+{% endblock %}

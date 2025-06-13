@@ -1,50 +1,133 @@
 {% extends "base.html" %}
 {% block title %}Comparador de Criptomonedas{% endblock %}
-
 {% block content %}
 <style>
-  .btn-accent {
-    background-color: var(--accent);
-    color: #000;
-    border: none;
-  }
-
-  .btn-accent:hover {
-    background-color: #4ec79c;
-    color: #000;
-  }
-
-  #fightBanner {
-    position: fixed;
-    top: 20%;
-    left: 50%;
-    transform: translateX(-50%) scale(0.8);
-    background: var(--accent);
-    color: black;
-    font-size: 2rem;
-    font-weight: bold;
-    padding: 1rem 2rem;
-    border-radius: 1rem;
-    opacity: 0;
-    z-index: 9999;
-    pointer-events: none;
-    transition: opacity 0.5s ease, transform 0.5s ease;
-  }
-
-  #fightBanner.show {
-    opacity: 1;
-    transform: translateX(-50%) scale(1.1);
-  }
-
   h1 {
-    font-size: clamp(1.5rem, 5vw, 2.2rem);
-    word-break: break-word;
     color: var(--accent);
+    text-align: center;
+    margin-bottom: 2rem;
   }
 
-  .crypto-select,
-  #addCryptoBtn {
+  .guide-box {
+    background-color: var(--header-bg);
+    border: 1px solid var(--accent);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    max-width: 900px;
+    margin-left: auto;
+    margin-right: auto;
+    color: var(--text-color);
+  }
+
+  .guide-box h2 {
+    color: var(--accent);
+    margin-bottom: 1rem;
+    font-size: 1.5rem;
+  }
+
+  .guide-box ul {
+    padding-left: 1.5rem;
+  }
+
+  .guide-box li {
+    margin-bottom: 0.5rem;
+  }
+
+  .selector-container {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 2rem;
+  }
+
+  .selector-button {
+    width: 220px;
+    height: 110px;
+    border: 2px dashed var(--accent);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+    background-color: transparent;
+    transition: all 0.3s ease;
+    flex-direction: column;
+    color: inherit;
+  }
+
+  .selector-button:hover {
+    box-shadow: 0 0 8px var(--accent);
+  }
+
+  .selector-button.active {
+    background-color: var(--card);
+    color: var(--text-color);
+    border: 2px solid var(--accent);
+  }
+
+  body.light .selector-button.active {
+    background-color: #e7fdf4;
+    color: #000;
+  }
+
+  .suggestion-input {
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
+    height: 100%;
+    border: none;
+    outline: none;
+    font-size: 1rem;
+    padding: 0.5rem 1rem;
+    border-radius: 12px;
+    z-index: 2;
+    background-color: #fff;
+    color: #000;
+  }
+
+  .suggestion-box {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    max-height: 200px;
+    overflow-y: auto;
+    background-color: var(--bg-color);
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    z-index: 5;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+  }
+
+  .suggestion-item {
+    padding: 0.6rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .suggestion-item:hover {
+    background-color: var(--header-bg);
+  }
+
+  .suggestion-item img {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+
+  .selector-content img {
+    width: 36px;
+    height: 36px;
+    object-fit: cover;
+    border-radius: 50%;
   }
 
   .chart-container {
@@ -56,43 +139,32 @@
     width: 100% !important;
     height: auto !important;
   }
-
-  .range-btn {
-    border: 1px solid var(--accent);
-    color: var(--accent);
-    background-color: transparent;
-    transition: all 0.3s ease;
-  }
-
-  .range-btn.active,
-  .range-btn:hover {
-    background-color: var(--accent);
-    color: #000;
-    box-shadow: 0 0 10px var(--accent);
-  }
-
-  .chart-select {
-    margin-bottom: 1rem;
-    max-width: 200px;
-  }
 </style>
 
+
 <div class="container py-4">
-  <h1 class="mb-4 text-center">Comparador de Criptomonedas</h1>
-  <div class="row g-3 mb-3" id="cryptoSelectors">
-    <div class="col-12 col-md-6 col-lg-3">
-      <select class="form-control crypto-select">
-        <option value="">Seleccionar cripto</option>
-      </select>
-    </div>
+  <h1>Comparador de Criptomonedas</h1>
+
+  <div class="guide-box">
+    <h2>📘 ¿Cómo usar el comparador?</h2>
+    <ul>
+      <li>📈 <strong>Selecciona hasta 4 criptomonedas</strong> haciendo clic en los recuadros con el símbolo <code>+</code>. Puedes buscarlas por nombre o símbolo.</li>
+      <li>🧠 El gráfico se actualiza automáticamente al seleccionar una moneda.</li>
+      <li>📊 Puedes alternar entre ver la evolución del <strong>Precio</strong>, <strong>Volumen</strong> o <strong>Capitalización de mercado</strong> desde el desplegable.</li>
+      <li>💡 Esto te permite identificar fácilmente qué criptomoneda ha tenido un mejor desempeño relativo.</li>
+    </ul>
   </div>
-  <div class="text-center">
-    <button class="btn btn-sm btn-accent mb-4" id="addCryptoBtn">+ Añadir otra cripto</button>
+
+  <div class="selector-container" id="selectorContainer">
+    <div class="selector-button" data-index="0">+</div>
+    <div class="selector-button" data-index="1">+</div>
+    <div class="selector-button" data-index="2">+</div>
+    <div class="selector-button" data-index="3">+</div>
   </div>
 
   <div class="text-center mb-3">
     <label for="chartType" class="form-label">Ver gráfico de:</label>
-    <select class="form-select chart-select mx-auto" id="chartType">
+    <select class="form-select mx-auto" style="max-width: 300px" id="chartType">
       <option value="price">Precio</option>
       <option value="volume">Volumen</option>
       <option value="marketcap">Market Cap</option>
@@ -104,69 +176,50 @@
   </div>
 </div>
 
-<div id="fightBanner">¡FIGHT!</div>
-
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
   const maxCryptos = 4;
-  const selectedCryptos = [];
   const chartColors = ['#F7931A', '#627EEA', '#3CC8C8', '#9945FF'];
-  let mainChart;
+  let selectedCryptos = Array(maxCryptos).fill(null);
   let assetDataMap = {};
+  let mainChart;
+  let assets = [];
 
-  function fetchAssetList() {
-    $.get('/versus/assets', function(data) {
-      $('.crypto-select').each(function () {
-        const select = $(this);
-        if (select.children('option').length <= 1) {
-          data.assets.forEach(asset => {
-            select.append(`<option value="${asset.Symbol}">${asset.Name} (${asset.Symbol})</option>`);
-          });
-        }
-      });
-    });
+  async function fetchAssets() {
+    const res = await fetch('/versus/assets');
+    const json = await res.json();
+    assets = json.assets;
   }
 
-  function fetchAssetData(symbol, color) {
-    $.get(`/versus/data?symbol=${symbol}`, function(data) {
-      assetDataMap[symbol] = {
-        label: data.label,
-        dates: data.data.map(d => d[0]),
-        price: data.data.map(d => d[1]),
-        volume: data.data.map(d => d[1] * 1.2),
-        marketcap: data.data.map(d => d[1] * 1000),
-        color
-      };
-      updateMainChart();
-    });
-  }
-
-  function getChartOptions() {
+  async function fetchAssetData(symbol) {
+    const res = await fetch(`/versus/data?symbol=${symbol}`);
+    const json = await res.json();
     return {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: { legend: { labels: { color: '#6EF1B3' } } },
-      scales: {
-        x: { ticks: { color: '#ccc' }, grid: { color: '#333' } },
-        y: { ticks: { color: '#ccc' }, grid: { color: '#333' } }
-      }
+      label: json.label,
+      symbol: json.symbol,
+      dates: json.data.map(d => d[0]),
+      price: json.data.map(d => d[1]),
+      volume: json.data.map(d => d[1] * 1.2),
+      marketcap: json.data.map(d => d[1] * 1000)
     };
   }
 
-  function updateMainChart() {
-    const type = $('#chartType').val();
-    const datasets = Object.values(assetDataMap).map(data => ({
-      label: data.label,
-      data: data[type],
-      borderColor: data.color,
-      backgroundColor: data.color + '22',
-      fill: false,
-      tension: 0.3
-    }));
-
-    const labels = Object.values(assetDataMap)[0]?.dates || [];
-
+  function updateChart() {
+    const type = document.getElementById('chartType').value;
+    const datasets = selectedCryptos.map((crypto, index) => {
+      if (!crypto) return null;
+      const data = assetDataMap[crypto.Symbol];
+      return {
+        label: crypto.Name,
+        data: data[type],
+        borderColor: chartColors[index],
+        backgroundColor: chartColors[index] + '22',
+        fill: false,
+        tension: 0.3
+      };
+    }).filter(Boolean);
+    const labels = datasets[0]?.data?.map((_, i) => assetDataMap[selectedCryptos.find(c => c)?.Symbol]?.dates[i]) || [];
     if (mainChart) {
       mainChart.data.labels = labels;
       mainChart.data.datasets = datasets;
@@ -175,55 +228,77 @@
       mainChart = new Chart(document.getElementById('mainChart'), {
         type: 'line',
         data: { labels, datasets },
-        options: getChartOptions()
+        options: {
+          responsive: true,
+          plugins: { legend: { labels: { color: getComputedStyle(document.body).getPropertyValue('--accent') } } },
+          scales: {
+            x: { ticks: { color: '#ccc' }, grid: { color: '#333' } },
+            y: { ticks: { color: '#ccc' }, grid: { color: '#333' } }
+          }
+        }
       });
     }
   }
 
-  function showFightBanner() {
-    const banner = document.getElementById("fightBanner");
-    banner.classList.add("show");
-    setTimeout(() => banner.classList.remove("show"), 1500);
-  }
+  document.getElementById('chartType').addEventListener('change', updateChart);
 
-  $('#addCryptoBtn').click(function () {
-    const count = $('.crypto-select').length;
-    if (count >= maxCryptos) return;
+  document.addEventListener('DOMContentLoaded', async () => {
+    await fetchAssets();
+    const buttons = document.querySelectorAll('.selector-button');
 
-    const newSelect = $(`
-      <div class="col-12 col-md-6 col-lg-3">
-        <select class="form-control crypto-select">
-          <option value="">Seleccionar cripto</option>
-        </select>
-      </div>
-    `);
+    buttons.forEach((btn, index) => {
+      btn.addEventListener('click', () => {
+        if (btn.classList.contains('active')) {
+          selectedCryptos[index] = null;
+          btn.innerHTML = '+';
+          btn.classList.remove('active');
+          updateChart();
+          return;
+        }
 
-    $('#cryptoSelectors').append(newSelect);
-    fetchAssetList();
+        btn.innerHTML = `<input type="text" class="suggestion-input" placeholder="Buscar cripto..." />
+                          <div class="suggestion-box"></div>`;
+        const input = btn.querySelector('input');
+        const box = btn.querySelector('.suggestion-box');
 
-    newSelect.find('select').change(function () {
-      const symbol = $(this).val();
-      if (symbol && !selectedCryptos.includes(symbol)) {
-        selectedCryptos.push(symbol);
-        const color = chartColors[selectedCryptos.length - 1];
-        fetchAssetData(symbol, color);
-        showFightBanner();
-      }
+        input.focus();
+
+        input.addEventListener('input', () => {
+          const val = input.value.toLowerCase();
+          box.innerHTML = '';
+          assets.filter(a => a.Name.toLowerCase().includes(val) || a.Symbol.toLowerCase().includes(val)).forEach(asset => {
+            const div = document.createElement('div');
+            div.className = 'suggestion-item';
+            div.innerHTML = `<img src="${asset.LogoURL}" alt="${asset.Symbol}" /> ${asset.Name} (${asset.Symbol})`;
+            div.addEventListener('click', async () => {
+              const data = await fetchAssetData(asset.Symbol);
+              assetDataMap[asset.Symbol] = data;
+              selectedCryptos[index] = asset;
+              btn.innerHTML = `<div class="selector-content">
+                                  <img src="${asset.LogoURL}" alt="">
+                                  <span>${asset.Name}</span>
+                               </div>`;
+              btn.classList.add('active');
+              updateChart();
+            });
+            box.appendChild(div);
+          });
+        });
+
+        setTimeout(() => {
+          document.addEventListener('click', function clear(e) {
+            if (!btn.contains(e.target)) {
+              if (!selectedCryptos[index]) btn.innerHTML = '+';
+              else btn.innerHTML = `<div class="selector-content">
+                                      <img src="${selectedCryptos[index].LogoURL}" alt="">
+                                      <span>${selectedCryptos[index].Name}</span>
+                                   </div>`;
+              document.removeEventListener('click', clear);
+            }
+          });
+        }, 10);
+      });
     });
   });
-
-  fetchAssetList();
-
-  $('.crypto-select').change(function () {
-    const symbol = $(this).val();
-    if (symbol && !selectedCryptos.includes(symbol)) {
-      selectedCryptos.push(symbol);
-      const color = chartColors[selectedCryptos.length - 1];
-      fetchAssetData(symbol, color);
-      showFightBanner();
-    }
-  });
-
-  $('#chartType').change(() => updateMainChart());
 </script>
 {% endblock %}

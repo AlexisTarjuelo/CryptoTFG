@@ -112,20 +112,15 @@
       box-shadow: 0 0 10px #3EC894;
     }
 
-    .alert {
-      padding: 0.8rem;
-      border-radius: 8px;
-      font-weight: bold;
-      color: white;
-      margin-bottom: 1rem;
+    .password-hint {
+      font-size: 0.85rem;
+      color: #F39C12;
+      margin-top: 0.3rem;
+      text-align: left;
     }
 
-    .alert-success {
-      background-color: #3EC894;
-    }
-
-    .alert-danger {
-      background-color: #E74C3C;
+    .password-hint.valid {
+      color: #6EF1B3;
     }
 
     @media (max-width: 1024px) {
@@ -160,14 +155,6 @@
     <img src="/static/images/logo_cryptotfg.png" alt="Cryptotfg Logo" class="logo" />
     <h2 class="register-title">Registrarse</h2>
 
-    {% with messages = get_flashed_messages(with_categories=True) %}
-      {% if messages %}
-        {% for category, message in messages %}
-          <div class="alert alert-{{ category }}">{{ message }}</div>
-        {% endfor %}
-      {% endif %}
-    {% endwith %}
-
     <form method="POST" action="{{ url_for('auth.register') }}" autocomplete="off">
       {{ form.csrf_token }}
 
@@ -187,7 +174,12 @@
       </div>
 
       <div class="form-row">
-        <div class="form-group">{{ form.password(class="input", placeholder="Contraseña") }}</div>
+        <div class="form-group">
+          {{ form.password(class="input", placeholder="Contraseña", id="password") }}
+          <div id="passwordHint" class="password-hint">
+            Mínimo 8 caracteres, incluyendo mayúscula, minúscula y símbolo.
+          </div>
+        </div>
         <div class="form-group">{{ form.confirm_password(class="input", placeholder="Confirmar contraseña") }}</div>
         <div></div>
       </div>
@@ -200,5 +192,22 @@
       {{ form.submit(class="register-btn") }}
     </form>
   </div>
+
+  <script>
+    const passwordInput = document.getElementById("password");
+    const hint = document.getElementById("passwordHint");
+
+    passwordInput.addEventListener("input", () => {
+      const value = passwordInput.value;
+      const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\W).{8,}$/;
+      if (regex.test(value)) {
+        hint.textContent = "✅ Contraseña válida.";
+        hint.classList.add("valid");
+      } else {
+        hint.textContent = "❌ Mínimo 8 caracteres, incluyendo mayúscula, minúscula y símbolo.";
+        hint.classList.remove("valid");
+      }
+    });
+  </script>
 </body>
 </html>

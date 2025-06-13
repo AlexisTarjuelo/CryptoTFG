@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Configurar 2FA - Cryptotfg{% endblock %}
+
+{% block content %}
+<style>
+  .qr-container {
+    max-width: 600px;
+    margin: 0 auto;
+    background-color: var(--header-bg);
+    border: 1px solid var(--accent);
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 0 10px rgba(110, 241, 179, 0.1);
+    text-align: center;
+  }
+
+  .qr-container h2 {
+    color: var(--accent);
+    margin-bottom: 1rem;
+  }
+
+  .qr-container img {
+    width: 200px;
+    margin: 1.5rem auto;
+    border: 3px solid var(--accent);
+    border-radius: 12px;
+  }
+
+  .qr-container input[type="text"] {
+    padding: 0.6rem;
+    border-radius: 8px;
+    border: 1px solid var(--accent);
+    background-color: transparent;
+    color: var(--text-color);
+    font-size: 1rem;
+    width: 150px;
+    text-align: center;
+  }
+
+  .qr-container .form-error {
+    color: red;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+  }
+
+  .qr-container .submit-btn {
+    margin-top: 1.5rem;
+  }
+</style>
+
+<div class="qr-container">
+  <h2>Activar Autenticación 2FA</h2>
+  <p>Escanea este código QR con tu app de autenticación (Google Authenticator, Authy, etc.):</p>
+  <img src="data:image/png;base64,{{ qr_code }}" alt="QR 2FA" />
+
+  <form method="POST" action="{{ url_for('auth.confirm_2fa') }}">
+    {{ form.hidden_tag() }}
+
+    <label for="otp_code" style="color: var(--accent); font-weight: bold;">Introduce el código de 6 dígitos:</label><br>
+    {{ form.otp_code(size=10, placeholder='123456') }}
+
+    {% for error in form.otp_code.errors %}
+      <div class="form-error">{{ error }}</div>
+    {% endfor %}
+
+    <div class="submit-btn">
+      {{ form.submit(class="biometric-btn") }}
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -83,7 +83,7 @@
     background-color: var(--accent);
     border: none;
     color: var(--bg-color);
-    padding: 0.6rem 1.5rem;
+    padding: 0.6rem 1.2rem;
     border-radius: 8px;
     font-weight: bold;
     cursor: pointer;
@@ -94,10 +94,20 @@
     background-color: #3EC894;
   }
 
+  .pagination-btn.active {
+    background-color: #3EC894;
+    cursor: default;
+  }
+
   .table-wrapper {
     width: 100%;
     overflow-x: auto;
     margin-top: 2rem;
+  }
+
+  .sparkline {
+    width: 100px;
+    height: 30px;
   }
 
   @media (max-width: 768px) {
@@ -151,7 +161,19 @@
   </div>
 </div>
 
-<div class="sort-export-container" style="display:flex; justify-content:space-between; align-items:center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
+<div class="summary-cards">
+  <div class="card">
+    <h3>Total Market Cap</h3>
+    <div class="value" id="marketCapValue">Cargando...</div>
+    <canvas id="marketCapHistory" height="80" style="margin-top: 1rem;"></canvas>
+  </div>
+  <div class="card">
+    <h3>24h Trading Volume</h3>
+    <div class="value" id="volumeValue">Cargando...</div>
+    <canvas id="volumeHistory" height="80" style="margin-top: 1rem;"></canvas>
+  </div>
+</div>
+<div class="sort-export-container" style="display:flex; justify-content:space-between; align-items:center; flex-wrap: wrap; gap: 1rem; margin-top: 2rem; margin-bottom: 1rem;">
   <div>
     <label for="sort" style="color: var(--accent); font-weight: 500;">Ordenar por:</label>
     <select id="sort" onchange="changeSort(this.value)" style="padding: 0.4rem; border-radius: 8px;">
@@ -160,7 +182,7 @@
       <option value="volume" {% if sort_by == 'volume' %}selected{% endif %}>Volumen</option>
     </select>
   </div>
-  <a href="{{ url_for('auth.export_dashboard_csv') }}" class="pagination-btn">📅 Exportar CSV</a>
+  <a href="{{ url_for('auth.export_dashboard_csv') }}" class="pagination-btn">Exportar CSV</a>
 </div>
 
 <div class="table-wrapper">
@@ -172,10 +194,11 @@
         <th>Precio</th>
         <th>Market Cap</th>
         <th>Volumen 24h</th>
+        <th>7d</th>
       </tr>
     </thead>
     <tbody>
-      {% for id, name, symbol, logo_url, id_coin, price, market_cap, volume in assets %}
+      {% for id, name, symbol, logo_url, id_coin, price, market_cap, volume, price_7d, price_prev in assets %}
       <tr>
         <td>{{ loop.index + ((page - 1) * 100) }}</td>
         <td>
@@ -184,27 +207,171 @@
             <span style="color: var(--accent);">{{ name }} ({{ symbol }})</span>
           </a>
         </td>
-        <td>${{ '%.2f'|format(price) }}</td>
+        <td>
+  ${{ '%.2f'|format(price) }}
+  {% if price_prev is not none %}
+    {% if price > price_prev %}
+      <span style="color: #4CAF50;">&#9650;</span> {# flecha verde ▲ #}
+    {% elif price < price_prev %}
+      <span style="color: #FF6B6B;">&#9660;</span> {# flecha roja ▼ #}
+    {% endif %}
+  {% endif %}
+</td>
         <td>${{ '{:,.0f}'.format(market_cap) if market_cap else '-' }}</td>
         <td class="positive">${{ '{:,.0f}'.format(volume) if volume else '-' }}</td>
+        <td><canvas class="sparkline" data-spark='{{ price_7d | tojson | safe }}' width="100" height="30"></canvas></td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
 </div>
+<!-- Paginación mejorada con botones Anterior / Siguiente -->
+<div style="display: flex; flex-direction: column; align-items: center; margin-top: 2rem; gap: 1rem;">
+  <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem;">
 
-<div style="display: flex; justify-content: center; gap: 1rem; margin-top: 2rem; flex-wrap: wrap;">
-  {% if page > 1 %}
-    <a href="{{ url_for('auth.dashboard', page=page-1, sort=sort_by) }}" class="pagination-btn">Anterior</a>
-  {% endif %}
-  {% if page < total_pages %}
-    <a href="{{ url_for('auth.dashboard', page=page+1, sort=sort_by) }}" class="pagination-btn">Siguiente</a>
-  {% endif %}
+    {% if page > 1 %}
+      <a href="{{ url_for('auth.dashboard', page=page-1, sort=sort_by) }}" class="pagination-btn">Anterior</a>
+    {% endif %}
+
+    {% set show_ellipsis = namespace(value=false) %}
+    {% for p in range(1, total_pages + 1) %}
+      {% if p == 1 or p == 2 or p == total_pages or p == total_pages - 1 or (p >= page - 2 and p <= page + 2) %}
+        <a href="{{ url_for('auth.dashboard', page=p, sort=sort_by) }}"
+           class="pagination-btn {% if p == page %}active{% endif %}">{{ p }}</a>
+        {% set show_ellipsis.value = false %}
+      {% elif not show_ellipsis.value %}
+        <span style="padding: 0.6rem 1rem; color: var(--accent);">...</span>
+        {% set show_ellipsis.value = true %}
+      {% endif %}
+    {% endfor %}
+
+    {% if page < total_pages %}
+      <a href="{{ url_for('auth.dashboard', page=page+1, sort=sort_by) }}" class="pagination-btn">Siguiente</a>
+    {% endif %}
+  </div>
+
+  <!-- Formulario para ir a una página específica -->
+  <form method="get" action="{{ url_for('auth.dashboard') }}" style="margin-top: 0.5rem;">
+    <input type="hidden" name="sort" value="{{ sort_by }}">
+    <label for="go-to-page" style="color: var(--accent); margin-right: 0.5rem;">Ir a página:</label>
+    <input type="number" name="page" id="go-to-page" min="1" max="{{ total_pages }}" style="width: 60px; padding: 0.3rem; border-radius: 6px;">
+    <button type="submit" class="pagination-btn" style="padding: 0.3rem 1rem; margin-left: 0.5rem;">Ir</button>
+  </form>
 </div>
-
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-  function changeSort(value) {
-    window.location.href = `?sort=${value}&page=1`;
+  fetch("/market/history")
+    .then(res => res.json())
+    .then(data => {
+      const ctx1 = document.getElementById("marketCapHistory").getContext("2d");
+      const ctx2 = document.getElementById("volumeHistory").getContext("2d");
+
+      const baseOptions = {
+        responsive: true,
+        scales: {
+          x: { display: false },
+          y: { display: false }
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => {
+                const v = ctx.raw;
+                if (v >= 1e12) return `$${(v / 1e12).toFixed(2)}T`;
+                if (v >= 1e9) return `$${(v / 1e9).toFixed(2)}B`;
+                if (v >= 1e6) return `$${(v / 1e6).toFixed(2)}M`;
+                return `$${v.toFixed(2)}`;
+              }
+            }
+          }
+        },
+        elements: {
+          line: { tension: 0.3 },
+          point: { radius: 0 }
+        }
+      };
+
+      new Chart(ctx1, {
+        type: 'line',
+        data: {
+          labels: data.dates,
+          datasets: [{
+            data: data.market_cap,
+            borderColor: '#3EC894',
+            fill: false
+          }]
+        },
+        options: baseOptions
+      });
+
+      new Chart(ctx2, {
+        type: 'line',
+        data: {
+          labels: data.dates,
+          datasets: [{
+            data: data.volume,
+            borderColor: '#3EC894',
+            fill: false
+          }]
+        },
+        options: baseOptions
+      });
+    });
+
+  function formatNumber(n) {
+    if (n >= 1e12) return "$" + (n / 1e12).toFixed(2) + "T";
+    if (n >= 1e9) return "$" + (n / 1e9).toFixed(2) + "B";
+    if (n >= 1e6) return "$" + (n / 1e6).toFixed(2) + "M";
+    if (n >= 1e3) return "$" + (n / 1e3).toFixed(2) + "K";
+    return "$" + n.toFixed(2);
   }
+
+  fetch('/market/overview-data')
+    .then(res => res.json())
+    .then(data => {
+      document.getElementById('marketCapValue').textContent = formatNumber(data.market_cap);
+      document.getElementById('volumeValue').textContent = formatNumber(data.volume);
+    });
+
+  function changeSort(value) {
+  window.location.href = `?sort=${value}&page=1`;
+}
+
+  // Sparkline rendering
+  document.querySelectorAll(".sparkline").forEach(canvas => {
+    const ctx = canvas.getContext("2d");
+    const raw = canvas.dataset.spark;
+    const data = JSON.parse(raw);
+    const labels = data.map(p => p[0]);
+    const prices = data.map(p => p[1]);
+
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          data: prices,
+          borderColor: "#3EC894",
+          borderWidth: 1.5,
+          pointRadius: 0,
+          fill: false,
+          tension: 0.3
+        }]
+      },
+      options: {
+        animation: false,
+        responsive: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { enabled: false }
+        },
+        scales: {
+          x: { display: false },
+          y: { display: false }
+        }
+      }
+    });
+  });
 </script>
 {% endblock %}
