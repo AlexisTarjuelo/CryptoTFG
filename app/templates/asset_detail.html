@@ -2,59 +2,29 @@
 {% block title %}{{ asset.Name }} - Cryptotfg{% endblock %}
 
 {% block content %}
-<!-- Bootstrap + estilos personalizados -->
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <style>
   :root {
-    --accent: #6EF1B3;
-    --card: #1e1e2f;
-    --text: #ffffff;
-    --border: #2e2e3f;
-    --background: #121212;
     --predicted: #FFD93D;
   }
 
-  body {
-    background-color: var(--background);
-    color: var(--text);
-  }
-
-  .card, .list-group-item, .form-control, .input-group-text, .table {
+  .card, .form-control, .input-group-text, .nav-tabs .nav-link {
     background-color: var(--card);
     border-color: var(--border);
-    color: var(--text);
+    color: var(--text-color);
   }
 
-  .card-title, .nav-link, .form-label, .table th, h4, h5 {
+  .card-title, .form-label, .table th, h4, h5, h6 {
     color: var(--accent);
   }
 
   .form-control:disabled, .form-control[readonly] {
     background-color: var(--card);
-    color: var(--text);
-  }
-
-  .nav-tabs .nav-link {
-    background-color: var(--card);
-    border-color: var(--border);
-    color: var(--text);
+    color: var(--text-color);
   }
 
   .nav-tabs .nav-link.active {
     background-color: var(--accent);
     color: #000;
-  }
-
-  .list-group-item {
-    border-color: var(--border);
-  }
-
-  .table-striped > tbody > tr:nth-of-type(odd) {
-    background-color: #2a2a3a;
-  }
-
-  .table-hover tbody tr:hover {
-    background-color: #333344;
   }
 
   .range-btn {
@@ -75,10 +45,70 @@
     color: #000;
     box-shadow: 0 0 12px var(--accent);
   }
+
+  .text-muted {
+    color: #999 !important;
+  }
+
+  .crypto-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 2rem;
+    background-color: var(--bg-color);
+    border: 1px solid var(--accent);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .crypto-table th, .crypto-table td {
+    padding: 1rem;
+    text-align: left;
+  }
+
+  .crypto-table thead {
+    background-color: var(--header-bg);
+    color: var(--accent);
+  }
+
+  .crypto-table tbody tr:nth-child(odd) {
+    background-color: var(--table-row-odd);
+  }
+
+  .crypto-table tbody tr:nth-child(even) {
+    background-color: var(--table-row-even);
+  }
+
+  .crypto-table tbody td {
+    color: var(--text-color);
+  }
+
+  .crypto-table tbody td.positive {
+    color: var(--accent);
+  }
+
+  .table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    margin-top: 2rem;
+  }
+
+  /* Estilo mejorado para flechas del carrusel */
+  .carousel-control-prev-icon,
+  .carousel-control-next-icon {
+    background-size: 75% 75%;
+    background-color: rgba(0, 0, 0, 0.5); /* fondo visible */
+    border-radius: 50%;
+    padding: 10px;
+  }
+
+  .carousel-control-prev,
+  .carousel-control-next {
+    width: 5%;
+  }
 </style>
 
+
 <div class="container py-4">
-  <!-- Header -->
   <div class="d-flex align-items-center gap-3 mb-4">
     <img src="{{ asset.LogoURL }}" alt="{{ asset.Symbol }}" class="rounded-circle" width="60" height="60">
     <div>
@@ -87,9 +117,7 @@
     </div>
   </div>
 
-  <!-- Main dashboard -->
   <div class="row mb-5">
-    <!-- Stats -->
     <div class="col-lg-4 mb-4">
       <div class="card h-100 shadow-sm">
         <div class="card-body">
@@ -97,108 +125,139 @@
           <div class="row">
             <div class="col-6 mb-2"><strong>Market Cap:</strong><br><span>${{ latest_price.MarketCap | round(2) if latest_price else '-' }}</span></div>
             <div class="col-6 mb-2"><strong>Volumen 24h:</strong><br><span>${{ latest_price.TotalVolume | round(2) if latest_price else '-' }}</span></div>
-            <div class="col-6 mb-2"><strong>FDV:</strong><br><span>${{ fdv | round(2) if fdv else '-' }}</span></div>
+            <div class="col-6 mb-2"><strong>FDV:</strong><br>
+              <span>
+                {% if fdv_infinite %}
+                  ∞
+                {% elif fdv %}
+                  ${{ fdv | round(2) }}
+                {% else %}
+                  No disponible
+                {% endif %}
+              </span>
+            </div>
             <div class="col-6 mb-2"><strong>Vol/Mkt Cap:</strong><br><span>{{ vol_mkt_cap | round(2) if vol_mkt_cap else '-' }}%</span></div>
             <div class="col-6 mb-2"><strong>Total Supply:</strong><br><span>{{ total_supply }} {{ asset.Symbol }}</span></div>
-            <div class="col-6 mb-2"><strong>Max Supply:</strong><br><span>{{ max_supply }} {{ asset.Symbol }}</span></div>
+            <div class="col-6 mb-2"><strong>Max Supply:</strong><br><span>{{ max_supply if max_supply else 'Sin límite' }} {{ asset.Symbol }}</span></div>
             <div class="col-6 mb-2"><strong>Circulating Supply:</strong><br><span>{{ circulating_supply }} {{ asset.Symbol }}</span></div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Charts -->
     <div class="col-lg-8">
       <div class="mb-3 d-flex flex-wrap gap-2 align-items-center">
         <strong style="color: var(--accent);">Ver rango:</strong>
-        <button class="btn btn-sm range-btn active" data-range="ALL">Últimos datos</button>
+        <button class="btn btn-sm range-btn active" data-range="ALL">Max</button>
+        <button class="btn btn-sm range-btn" data-range="1D">24h</button>
+        <button class="btn btn-sm range-btn" data-range="7D">7d</button>
+        <button class="btn btn-sm range-btn" data-range="1M">1m</button>
+        <button class="btn btn-sm range-btn" data-range="3M">3m</button>
+        <button class="btn btn-sm range-btn" data-range="1Y">1y</button>
+        <button class="btn btn-sm range-btn" data-range="LOG">LOG</button>
       </div>
-      <ul class="nav nav-tabs mb-3" id="chartTabs" role="tablist">
-        <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#priceChartTab">Precio</button></li>
-        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#volumeChartTab">Volumen</button></li>
-        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#marketcapChartTab">Market Cap</button></li>
-        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#predictionChartTab">Predicción</button></li>
-      </ul>
-      <div class="tab-content">
-        <div class="tab-pane fade show active" id="priceChartTab"><canvas id="priceChart"></canvas></div>
-        <div class="tab-pane fade" id="volumeChartTab"><canvas id="volumeChart"></canvas></div>
-        <div class="tab-pane fade" id="marketcapChartTab"><canvas id="marketcapChart"></canvas></div>
-        <div class="tab-pane fade" id="predictionChartTab"><canvas id="predictionChart"></canvas></div>
+<ul class="nav nav-tabs mb-3" id="chartTabs" role="tablist">
+  <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#priceChartTab">Precio</button></li>
+  <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#volumeChartTab">Volumen</button></li>
+  <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#marketcapChartTab">Market Cap</button></li>
+  <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#predictionChartTab">Predicción</button></li>
+</ul>
+<div class="tab-content">
+  <div class="tab-pane fade show active" id="priceChartTab"><canvas id="priceChart"></canvas></div>
+  <div class="tab-pane fade" id="volumeChartTab"><canvas id="volumeChart"></canvas></div>
+  <div class="tab-pane fade" id="marketcapChartTab"><canvas id="marketcapChart"></canvas></div>
+  <div class="tab-pane fade" id="predictionChartTab"><canvas id="predictionChart"></canvas></div>
+</div>
+</div>
+</div>
+
+<div class="mb-5">
+  <h4 class="mb-3">Conversión {{ asset.Symbol }} a USD</h4>
+  <div class="row">
+    <div class="col-md-6">
+      <div class="input-group">
+        <input type="number" class="form-control" id="btcInput" placeholder="Cantidad en {{ asset.Symbol }}" value="1">
+        <span class="input-group-text">{{ asset.Symbol }}</span>
+        <span class="input-group-text">=</span>
+        <input type="text" class="form-control" id="usdOutput" readonly>
+        <span class="input-group-text">USD</span>
       </div>
     </div>
   </div>
+</div>
 
-  <!-- Conversion -->
-  <div class="mb-5">
-    <h4 class="mb-3">Conversión {{ asset.Symbol }} a USD</h4>
-    <div class="row">
-      <div class="col-md-6">
-        <div class="input-group">
-          <input type="number" class="form-control" id="btcInput" placeholder="Cantidad en {{ asset.Symbol }}" value="1">
-          <span class="input-group-text">{{ asset.Symbol }}</span>
-          <span class="input-group-text">=</span>
-          <input type="text" class="form-control" id="usdOutput" readonly>
-          <span class="input-group-text">USD</span>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Transactions -->
-  <div class="mb-5">
-    <h4 class="mb-3">Transacciones recientes</h4>
-    <div class="table-responsive">
-      <table class="table table-striped table-hover table-bordered align-middle">
-        <thead>
+<div class="mb-5">
+  <h4 class="mb-3">Transacciones recientes</h4>
+  <div class="table-wrapper">
+    <table class="crypto-table">
+      <thead>
+        <tr>
+          <th>Hash</th>
+          <th>Fecha</th>
+          <th>Cantidad</th>
+          <th>Desde</th>
+          <th>Hacia</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for tx in transactions %}
           <tr>
-            <th>Hash</th>
-            <th>Hora</th>
-            <th>Monto</th>
-            <th>Desde</th>
-            <th>Hacia</th>
+            <td title="{{ tx.TxHash }}">{{ tx.TxHash[:20] }}...</td>
+            <td>{{ tx.Timestamp.strftime('%d/%m/%Y %H:%M') }}</td>
+            <td>{{ tx.Amount | round(4) }} {{ asset.Symbol }}</td>
+            <td title="{{ tx.FromAddress }}">{{ tx.FromAddress[:30] }}...</td>
+            <td title="{{ tx.ToAddress }}">{{ tx.ToAddress[:30] }}...</td>
           </tr>
-        </thead>
-        <tbody>
-          {% for tx in transactions %}
-            <tr>
-              <td>{{ tx.TxHash[:10] }}...</td>
-              <td>{{ tx.Timestamp.strftime('%H:%M UTC') }}</td>
-              <td>{{ tx.Amount | round(4) }} {{ asset.Symbol }}</td>
-              <td>{{ tx.FromAddress[:10] }}...</td>
-              <td>{{ tx.ToAddress[:10] }}...</td>
-            </tr>
-          {% else %}
-            <tr><td colspan="5" class="text-center text-muted">No hay transacciones recientes.</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
+        {% else %}
+          <tr><td colspan="5" class="text-center text-muted">No hay transacciones recientes.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
-
-  <!-- Noticias -->
-  <div class="mb-5">
-    <h4 class="mb-3">Noticias relacionadas</h4>
-    <div class="row g-4">
-      {% for news in related_news %}
-        <div class="col-md-6 col-lg-4">
-          <div class="card h-100 border-0 shadow-sm">
-            {% if news.Imagen %}
-              <img src="{{ news.Imagen }}" class="card-img-top" alt="imagen noticia" style="height: 180px; object-fit: cover;">
-            {% endif %}
-            <div class="card-body d-flex flex-column">
-              <h6 class="card-title">{{ news.Titulo or 'Sin título' }}</h6>
-              <p class="card-text text-muted small mt-auto">{{ news.FechaPublicacion.strftime('%d/%m/%Y %H:%M') if news.FechaPublicacion else 'Fecha desconocida' }}</p>
-              <a href="{{ news.URL or '#' }}" target="_blank" class="btn btn-sm mt-2 range-btn">Leer más</a>
+</div>
+<div class="mb-5">
+  <h4 class="mb-3">Noticias relacionadas</h4>
+  {% if related_news %}
+    <div id="newsCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="6000">
+      <div class="carousel-inner">
+        {% for group in related_news|batch(3, '') %}
+          <div class="carousel-item {% if loop.first %}active{% endif %}">
+            <div class="row g-4">
+              {% for news in group if news %}
+                <div class="col-md-6 col-lg-4">
+                  <div class="card h-100 border-0 shadow-sm">
+                    {% if news.Imagen %}
+                      <img src="{{ news.Imagen }}" class="card-img-top" alt="imagen noticia" style="height: 180px; object-fit: cover;">
+                    {% endif %}
+                    <div class="card-body d-flex flex-column">
+                      <h6 class="card-title">{{ news.Titulo or 'Sin título' }}</h6>
+                      <p class="card-text text-muted small mt-auto">{{ news.FechaPublicacion.strftime('%d/%m/%Y %H:%M') if news.FechaPublicacion else 'Fecha desconocida' }}</p>
+                      <a href="{{ news.URL or '#' }}" target="_blank" class="btn btn-sm mt-2 range-btn">Leer más</a>
+                    </div>
+                  </div>
+                </div>
+              {% endfor %}
             </div>
           </div>
-        </div>
-      {% else %}
-        <div class="col-12">
-          <div class="alert alert-secondary text-center">Aún no hay noticias para este activo.</div>
-        </div>
-      {% endfor %}
+        {% endfor %}
+      </div>
+      {% if related_news|length > 3 %}
+        <button class="carousel-control-prev" type="button" data-bs-target="#newsCarousel" data-bs-slide="prev">
+          <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+          <span class="visually-hidden">Anterior</span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#newsCarousel" data-bs-slide="next">
+          <span class="carousel-control-next-icon" aria-hidden="true"></span>
+          <span class="visually-hidden">Siguiente</span>
+        </button>
+      {% endif %}
     </div>
-  </div>
+  {% else %}
+   <div style="background-color: var(--card); color: var(--text-color); padding: 1.5rem; border-radius: 12px; text-align: center; border: 1px solid var(--border);">
+  Aún no hay noticias para este activo.
+</div>
+  {% endif %}
+</div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -208,43 +267,142 @@
   const prices = {{ price_history | map(attribute='1') | list | tojson }};
   const volumes = prices.map(p => p * 1.3);
   const marketcaps = prices.map(p => p * 100);
-  const predictions = prices.map((p, i) => p + Math.sin(i / 5) * 100 + i * 10);
+  const predictionLabels = {{ prediction_labels | tojson }};
+  const predictionData = {{ prediction_data | tojson }};
 
-  const createChart = (id, data, label, color, type = 'line', options = {}) => {
-    new Chart(document.getElementById(id), {
+  const fullLabels = [...labels];
+  const fullPrices = [...prices];
+  const fullVolumes = [...volumes];
+  const fullMarketcaps = [...marketcaps];
+
+  function getAccentColor() {
+    return getComputedStyle(document.body).getPropertyValue('--accent').trim();
+  }
+
+  const charts = [];
+
+  function createChart(id, data, label, color, type = 'line', extraOptions = {}) {
+    const chart = new Chart(document.getElementById(id), {
       type,
       data: {
-        labels: labels,
+        labels: id === 'predictionChart' ? predictionLabels : labels,
         datasets: [{
-          label: label,
-          data: data,
+          label,
+          data,
           borderColor: color,
           backgroundColor: color + '22',
           tension: 0.3,
           fill: true,
-          ...options
+          ...extraOptions
         }]
       },
       options: {
         responsive: true,
         plugins: { legend: { display: false } },
         scales: {
-          x: { ticks: { color: '#ccc' }, grid: { color: '#333' } },
-          y: { ticks: { color: '#ccc' }, grid: { color: '#333' } }
+          x: {
+            ticks: { color: getAccentColor() },
+            grid: { color: '#333' }
+          },
+          y: {
+            ticks: { color: getAccentColor() },
+            grid: { color: '#333' },
+            type: 'linear'
+          }
         }
       }
     });
-  };
+    charts.push(chart);
+  }
 
-  createChart('priceChart', prices, '{{ asset.Symbol }} / USD', '#6EF1B3');
-  createChart('volumeChart', volumes, 'Volumen', '#3EC894', 'bar');
-  createChart('marketcapChart', marketcaps, 'Market Cap', '#FF6B6B', 'bar');
-  createChart('predictionChart', predictions, 'Predicción', '#FFD93D', 'line', { borderDash: [10, 5], pointRadius: 0 });
+  // Gráficos principales
+  createChart('priceChart', prices, '{{ asset.Symbol }} / USD', getAccentColor());
+  createChart('volumeChart', volumes, 'Volumen', '#3498db', 'bar', {
+    backgroundColor: '#3498db55',
+    borderColor: '#2980b9',
+    borderWidth: 1
+  });
+  createChart('marketcapChart', marketcaps, 'Market Cap', '#e74c3c', 'bar', {
+    backgroundColor: '#e74c3c55',
+    borderColor: '#c0392b',
+    borderWidth: 1
+  });
+  createChart('predictionChart', predictionData, 'Predicción', getComputedStyle(document.body).getPropertyValue('--predicted'), 'line', {
+    borderDash: [10, 5],
+    pointRadius: 0
+  });
 
+  // Conversión a USD
   document.getElementById('btcInput').addEventListener('input', () => {
     const btc = parseFloat(document.getElementById('btcInput').value || 0);
     document.getElementById('usdOutput').value = (btc * {{ latest_price.PriceUSD if latest_price else 0 }}).toLocaleString(undefined, { minimumFractionDigits: 2 });
   });
   document.getElementById('btcInput').dispatchEvent(new Event('input'));
+
+  function updateChartsAxisColor() {
+    const accent = getAccentColor();
+    charts.forEach(chart => {
+      chart.options.scales.x.ticks.color = accent;
+      chart.options.scales.y.ticks.color = accent;
+      chart.update();
+    });
+  }
+
+  function filterDataByRange(range) {
+    const total = fullLabels.length;
+    let startIndex = 0;
+    switch (range) {
+      case '1D': startIndex = total - 2; break;
+      case '7D': startIndex = total - 7; break;
+      case '1M': startIndex = total - 30; break;
+      case '3M': startIndex = total - 90; break;
+      case '1Y': startIndex = total - 365; break;
+      case 'ALL': startIndex = 0; break;
+      default: startIndex = 0;
+    }
+    return {
+      labels: fullLabels.slice(startIndex),
+      prices: fullPrices.slice(startIndex),
+      volumes: fullVolumes.slice(startIndex),
+      marketcaps: fullMarketcaps.slice(startIndex)
+    };
+  }
+
+  // Filtros de rango y modo LOG
+  document.querySelectorAll('.range-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      const range = btn.dataset.range;
+      const data = filterDataByRange(range);
+      const isLog = range === 'LOG';
+
+      charts.slice(0, 3).forEach(chart => {
+        chart.options.scales.y.type = isLog ? 'logarithmic' : 'linear';
+      });
+
+      charts[0].data.labels = data.labels;
+      charts[0].data.datasets[0].data = data.prices;
+
+      charts[1].data.labels = data.labels;
+      charts[1].data.datasets[0].data = data.volumes;
+
+      charts[2].data.labels = data.labels;
+      charts[2].data.datasets[0].data = data.marketcaps;
+
+      charts.slice(0, 3).forEach(chart => chart.update());
+    });
+  });
+
+  // Cambio de tema dinámico
+  const toggleButton = document.querySelector('.toggle-theme');
+  if (toggleButton) {
+    toggleButton.addEventListener('click', () => {
+      setTimeout(updateChartsAxisColor, 100);
+    });
+  }
 </script>
+
+
 {% endblock %}

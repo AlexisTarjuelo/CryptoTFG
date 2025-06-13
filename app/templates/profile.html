@@ -99,6 +99,12 @@
     box-shadow: 0 0 10px #3EC894;
   }
 
+  .password-hint {
+    font-size: 0.85rem;
+    color: #F39C12;
+    margin-top: 0.3rem;
+  }
+
   .biometric-section {
     text-align: center;
     margin-top: 3rem;
@@ -179,10 +185,6 @@
     font-weight: bold;
   }
 
-  hr {
-    display: none;
-  }
-
   @media (max-width: 768px) {
     .form-row .form-group {
       min-width: 100%;
@@ -216,14 +218,18 @@
       <div class="form-group">{{ form.phone.label }}{{ form.phone }}</div>
     </div>
     <div class="form-row">
-      <div class="form-group">{{ form.password.label }}{{ form.password }}</div>
-      <div class="form-group">{{ form.confirm_password.label }}{{ form.confirm_password }}</div>
+      <div class="form-group">
+        {{ form.password.label }}{{ form.password(id="newPassword") }}
+        <div id="passwordHint" class="password-hint">Mínimo 8 caracteres, incluyendo mayúscula, minúscula y símbolo.</div>
+      </div>
+      <div class="form-group">
+        {{ form.confirm_password.label }}{{ form.confirm_password(id="confirmPassword") }}
+        <div id="confirmPasswordHint" class="password-hint">Ambas contraseñas deben coincidir.</div>
+      </div>
     </div>
-
     <div class="form-group" style="display: none;">
       {{ form.avatar.label }}{{ form.avatar }}
     </div>
-
     <div class="form-actions">
       {{ form.submit(class_='btn') }}
     </div>
@@ -234,8 +240,24 @@
     <button class="biometric-btn" onclick="startBiometricRegistration()">🔐 Registrar biometría</button>
     <p id="bio-register-status" style="margin-top: 1rem; font-weight: bold;"></p>
   </div>
+
+  <div class="biometric-section">
+    <h3>Autenticación 2FA</h3>
+    {% if not user.two_factor_enabled %}
+      <a href="{{ url_for('auth.setup_2fa') }}">
+        <button class="biometric-btn">🔒 Activar 2FA</button>
+      </a>
+    {% else %}
+      <p style="color: #6EF1B3;">✅ 2FA activado</p>
+      <form method="POST" action="{{ url_for('auth.disable_2fa') }}">
+        {{ disable_2fa_form.hidden_tag() }}
+        {{ disable_2fa_form.submit(class="biometric-btn") }}
+      </form>
+    {% endif %}
+  </div>
 </div>
 
+<!-- Modal avatar -->
 <div class="modal" id="avatarModal">
   <div class="modal-content">
     <button class="close-modal" onclick="closeAvatarModal()">✖</button>
@@ -252,10 +274,6 @@
 </div>
 
 <script>
-  function getCSRFToken() {
-    return document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-  }
-
   function openAvatarModal() {
     document.getElementById("avatarModal").style.display = "flex";
   }
@@ -265,11 +283,48 @@
   }
 
   function selectAvatar(filename) {
-    const avatarPreview = document.getElementById("avatar-preview");
-    avatarPreview.src = `/static/images/avatars/${filename}`;
+    document.getElementById("avatar-preview").src = `/static/images/avatars/${filename}`;
     document.querySelector("input[name='avatar']").value = filename;
     closeAvatarModal();
   }
+
+  const passwordInput = document.getElementById("newPassword");
+  const confirmInput = document.getElementById("confirmPassword");
+  const hint = document.getElementById("passwordHint");
+  const confirmHint = document.getElementById("confirmPasswordHint");
+
+  function validatePasswordRequirements(value) {
+    return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\W).{8,}$/.test(value);
+  }
+
+  function updatePasswordHints() {
+    const pwd = passwordInput.value;
+    const confirm = confirmInput.value;
+
+    if (validatePasswordRequirements(pwd)) {
+      hint.textContent = "✅ Contraseña válida.";
+      hint.style.color = "#6EF1B3";
+    } else {
+      hint.textContent = "❌ Mínimo 8 caracteres, incluyendo mayúscula, minúscula y símbolo.";
+      hint.style.color = "#F39C12";
+    }
+
+    if (confirm.length > 0) {
+      if (pwd === confirm) {
+        confirmHint.textContent = "✅ Las contraseñas coinciden.";
+        confirmHint.style.color = "#6EF1B3";
+      } else {
+        confirmHint.textContent = "❌ Las contraseñas no coinciden.";
+        confirmHint.style.color = "#F39C12";
+      }
+    } else {
+      confirmHint.textContent = "Ambas contraseñas deben coincidir.";
+      confirmHint.style.color = "#F39C12";
+    }
+  }
+
+  passwordInput.addEventListener("input", updatePasswordHints);
+  confirmInput.addEventListener("input", updatePasswordHints);
 
   async function startBiometricRegistration() {
     const status = document.getElementById("bio-register-status");
@@ -278,13 +333,6 @@
 
     try {
       const res = await fetch("/biometric/start-registration");
-      const contentType = res.headers.get("content-type");
-
-      if (!res.ok || !contentType || !contentType.includes("application/json")) {
-        const text = await res.text();
-        throw new Error("Error al iniciar registro: " + text.slice(0, 100));
-      }
-
       const options = await res.json();
       options.challenge = toBuffer(options.challenge);
       options.user.id = toBuffer(options.user.id);
@@ -301,37 +349,27 @@
         }
       };
 
-      const csrfToken = getCSRFToken();
-
       const finish = await fetch("/biometric/finish-registration", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-CSRFToken": csrfToken
+          "X-CSRFToken": getCSRFToken()
         },
         body: JSON.stringify(payload)
       });
 
-      const finishType = finish.headers.get("content-type");
-      if (!finish.ok || !finishType || !finishType.includes("application/json")) {
-        const text = await finish.text();
-        throw new Error("Error al finalizar registro: " + text.slice(0, 100));
-      }
-
       const result = await finish.json();
-      if (result.success) {
-        status.style.color = "green";
-        status.textContent = "✅ " + result.message;
-      } else {
-        status.style.color = "red";
-        status.textContent = "❌ " + (result.error || "Error al registrar");
-      }
-
+      status.style.color = result.success ? "green" : "red";
+      status.textContent = result.success ? `✅ ${result.message}` : `❌ Error al registrar la biometría.`;
     } catch (err) {
-      console.error(err);
+      console.error("❌ Error biométrico:", err);
       status.style.color = "red";
-      status.textContent = "❌ " + (err.message || "Error inesperado");
+      status.textContent = "❌ Error al registrar la biometría.";
     }
+  }
+
+  function getCSRFToken() {
+    return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
   }
 
   function toBuffer(base64url) {
@@ -341,8 +379,8 @@
   }
 
   function toBase64url(buffer) {
-    const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
-    return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    return btoa(String.fromCharCode(...new Uint8Array(buffer)))
+      .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   }
 </script>
 {% endblock %}

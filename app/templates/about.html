@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% block title %}Sobre la aplicación - Cryptotfg{% endblock %}
+
+{% block content %}
+<style>
+  .about-section {
+    display: flex;
+    flex-direction: column;
+    gap: 3rem;
+    padding: 2rem 0;
+  }
+
+  .about-feature {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+    flex-wrap: wrap;
+  }
+
+  .about-feature:nth-child(even) {
+    flex-direction: row-reverse;
+  }
+
+  .about-text {
+    flex: 1;
+    min-width: 300px;
+  }
+
+  .about-text h2 {
+    color: var(--accent);
+    font-size: 1.8rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .about-text p {
+    color: var(--text-color);
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+
+  .about-image {
+    flex: 1;
+    min-width: 280px;
+    text-align: center;
+  }
+
+  .about-image img {
+    width: 100%;
+    max-width: 550px;
+    height: auto;
+    border-radius: 12px;
+    border: 1px solid var(--accent);
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  @media (max-width: 768px) {
+    .about-feature {
+      flex-direction: column !important;
+    }
+  }
+</style>
+
+<h1 style="color: var(--accent); margin-bottom: 2rem;">Sobre la aplicación</h1>
+
+<div class="about-section">
+  <div class="about-feature">
+    <div class="about-text">
+      <h2>Adaptabilidad total</h2>
+      <p>Cryptotfg ha sido diseñado para adaptarse perfectamente tanto a ordenadores como dispositivos móviles, manteniendo siempre una experiencia fluida y moderna gracias a su diseño responsive y adaptable. La estética de dinosaurios hace que explorar el mundo cripto sea más divertido y visualmente atractivo.</p>
+    </div>
+    <div class="about-image">
+      <img src="/static/images/about/responsive.png" alt="Responsive">
+    </div>
+  </div>
+
+  <div class="about-feature">
+    <div class="about-text">
+      <h2>Inicio con estadísticas en tiempo real</h2>
+      <p>Desde la pantalla de inicio puedes ver un listado de activos cripto ordenables por capitalización de mercado, precio o volumen. Además, puedes descargar un CSV resumen de todos los datos y observar estadísticas generales.</p>
+    </div>
+    <div class="about-image">
+      <img src="/static/images/about/dashboard.png" alt="Dashboard">
+    </div>
+  </div>
+
+  <div class="about-feature">
+    <div class="about-text">
+      <h2>Simulación de Portfolio</h2>
+      <p>La sección de portfolio permite simular la compra de criptomonedas para analizar estrategias de inversión como parte del Trabajo de Fin de Grado. No se conectan fondos reales.</p>
+    </div>
+    <div class="about-image">
+      <img src="/static/images/about/portfolio.png" alt="Portfolio">
+    </div>
+  </div>
+
+  <div class="about-feature">
+    <div class="about-text">
+      <h2>Comparador de Activos</h2>
+      <p>Compara hasta 4 activos simultáneamente según su capitalización, volumen y precio. Ideal para tomar decisiones informadas con una vista clara y detallada.</p>
+    </div>
+    <div class="about-image">
+      <img src="/static/images/about/comparador.png" alt="Comparador">
+    </div>
+  </div>
+
+  <div class="about-feature">
+    <div class="about-text">
+      <h2>Holders estilo Jurassic</h2>
+      <p>Accede a una sección en la que se visualizan los holders de cada activo, agrupados como si fueran dinosaurios dentro del parque Jurassic Park.</p>
+    </div>
+    <div class="about-image">
+      <img src="/static/images/about/jurassic.png" alt="Holders">
+    </div>
+  </div>
+
+  <div class="about-feature">
+    <div class="about-text">
+      <h2>Estadísticas por activo</h2>
+      <p>Cada activo cuenta con su página de detalle, donde se muestran estadísticas clave como precio histórico, volumen, market cap y últimas transacciones on-chain en tiempo real.</p>
+    </div>
+    <div class="about-image">
+      <img src="/static/images/about/asset_stats.png" alt="Estadísticas del activo">
+    </div>
+  </div>
+
+  <div class="about-feature">
+    <div class="about-text">
+      <h2>Modo Claro / Oscuro</h2>
+      <p>Intercambia fácilmente entre un estilo claro y oscuro para una experiencia visual adaptada a tus preferencias, simplemente pulsando el botón en la parte superior.</p>
+    </div>
+    <div class="about-image">
+      <img src="/static/images/about/theme_switch.png" alt="Modo Claro/Oscuro">
+    </div>
+  </div>
+
+  <div class="about-feature">
+    <div class="about-text">
+      <h2>Gestión y Seguridad del Perfil</h2>
+      <p>Los usuarios pueden modificar su perfil, cambiar su avatar, activar la autenticación en dos pasos (2FA) o registrar su biometría para mayor seguridad.</p>
+    </div>
+    <div class="about-image">
+      <img src="/static/images/about/profile_edit.png" alt="Edición de perfil">
+    </div>
+  </div>
+</div>
+
+{% endblock %}

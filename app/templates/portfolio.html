@@ -40,6 +40,16 @@
     color: var(--text-color);
   }
 
+  .form-control {
+    background-color: var(--card);
+    color: var(--text-color);
+  }
+
+  .form-control::placeholder {
+    color: var(--text-color);
+    opacity: 0.5;
+  }
+
   .card-title, h4, h5, .modal-title {
     color: var(--accent);
   }
@@ -110,7 +120,6 @@
 <div class="container py-4">
   <h1 class="mb-4 text-accent">Mi Portfolio</h1>
 
-  <!-- Resumen -->
   <div class="row mb-4">
     <div class="col-md-4">
       <div class="card text-center">
@@ -140,9 +149,7 @@
     </div>
   </div>
 
-  <!-- Gráfico + tabla en misma fila -->
   <div class="row mb-5">
-    <!-- Gráfico -->
     <div class="col-md-4 d-flex flex-column h-100">
       <h4 class="mb-3">Distribución por Cripto</h4>
       <div class="card p-3 chart-wrapper flex-grow-1 d-flex align-items-center justify-content-center">
@@ -150,7 +157,6 @@
       </div>
     </div>
 
-    <!-- Tabla -->
     <div class="col-md-8 d-flex flex-column h-100">
       <h4 class="mb-3">Mis activos</h4>
       <div class="table-responsive flex-grow-1">
@@ -162,6 +168,7 @@
               <th>Valor actual</th>
               <th>Valor comprado</th>
               <th>Ganancia/Pérdida</th>
+              <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -178,6 +185,9 @@
               <td class="{{ 'positive' if diff >= 0 else 'negative' }}">
                 {{ '+' if diff >= 0 else '' }}{{ '%.2f'|format(diff) }}%
               </td>
+              <td>
+                <button class="btn btn-sm btn-warning" onclick="openCloseModal('{{ symbol }}', {{ actual }})">Cerrar posición</button>
+              </td>
             </tr>
             {% endfor %}
           </tbody>
@@ -185,27 +195,22 @@
       </div>
     </div>
   </div>
-
   <!-- Simulador de compra -->
   <div class="mb-5">
-    <h4 class="mb-3">Comprar cripto con tarjeta (simulación)</h4>
+    <h4 class="mb-3">Comprar cripto con tarjeta</h4>
     <div class="card p-4 shadow-sm">
       <form>
         <div class="row g-3">
           <div class="col-md-4">
             <label for="cryptoSelect" class="form-label">Selecciona cripto</label>
-            <select class="form-control" id="cryptoSelect">
-              <option value="BTC">Bitcoin (BTC)</option>
-              <option value="ETH">Ethereum (ETH)</option>
-              <option value="ADA">Cardano (ADA)</option>
-            </select>
+            <select class="form-control" id="cryptoSelect"></select>
           </div>
           <div class="col-md-4">
             <label for="amount" class="form-label">Cantidad en USD</label>
             <input type="number" class="form-control" id="amount" placeholder="Ej: 100">
           </div>
           <div class="col-md-4 d-flex align-items-end">
-            <button type="button" class="btn btn-accent w-100" onclick="openPaymentModal()">Simular compra</button>
+            <button type="button" class="btn btn-accent w-100" onclick="openPaymentModal()">Realizar compra</button>
           </div>
         </div>
       </form>
@@ -213,10 +218,10 @@
   </div>
 </div>
 
-<!-- Modal -->
+<!-- Modal de compra -->
 <div class="modal fade" id="purchaseModal" tabindex="-1" aria-labelledby="purchaseModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content text-white">
+    <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="purchaseModalLabel">Introduce los datos de tu tarjeta</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
@@ -225,11 +230,11 @@
         <form id="cardForm">
           <div class="mb-3">
             <label for="cardNumber" class="form-label">Número de tarjeta</label>
-            <input type="text" class="form-control" id="cardNumber" placeholder="Ej: 4111 1111 1111 1111">
+            <input type="text" class="form-control" id="cardNumber" placeholder="1234 5678 9012 3456">
           </div>
           <div class="mb-3">
             <label for="cardHolder" class="form-label">Nombre en la tarjeta</label>
-            <input type="text" class="form-control" id="cardHolder">
+            <input type="text" class="form-control" id="cardHolder" placeholder="Juan Pérez">
           </div>
           <div class="row">
             <div class="col-md-6 mb-3">
@@ -255,8 +260,39 @@
       </div>
       <div class="modal-footer">
         <button id="payButton" class="btn btn-accent" onclick="handlePayment()">Pagar</button>
-        <button class="btn btn-secondary d-none" data-bs-dismiss="modal" id="closeBtn" onclick="addToPortfolio()">Cerrar</button>
+        <button class="btn btn-secondary d-none" data-bs-dismiss="modal" id="closeBtn">Cerrar</button>
       </div>
+    </div>
+  </div>
+</div>
+<!-- Modal de Cerrar Posición -->
+<div class="modal fade" id="closePositionModal" tabindex="-1" aria-labelledby="closePositionLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="closePositionLabel">Cerrar posición</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <p>¿Seguro que deseas cerrar tu posición en <strong id="closeSymbol"></strong>?</p>
+        <p>Recibirás aproximadamente: <strong id="closeAmount"></strong> USD</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn btn-warning" id="confirmCloseBtn">Confirmar cierre</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast éxito -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1055">
+  <div id="successToast" class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="d-flex">
+      <div class="toast-body">
+        Posición cerrada exitosamente. Fondos simulados ingresados.
+      </div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Cerrar"></button>
     </div>
   </div>
 </div>
@@ -265,6 +301,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
   let selectedCrypto = '', usdAmount = 0, cryptoQty = 0, unit = '';
+  let symbolToClose = '', closeAmount = 0;
 
   function openPaymentModal() {
     const amount = parseFloat(document.getElementById('amount').value || 0);
@@ -273,14 +310,25 @@
     selectedCrypto = document.getElementById('cryptoSelect').value;
     unit = selectedCrypto;
 
-    document.getElementById('cardForm').reset();
-    document.getElementById('processingState').classList.add('d-none');
-    document.getElementById('completedState').classList.add('d-none');
-    document.getElementById('cardForm').classList.remove('d-none');
-    document.getElementById('payButton').classList.remove('d-none');
-    document.getElementById('closeBtn').classList.add('d-none');
+    fetch(`/portfolio/price/${selectedCrypto}`)
+      .then(res => res.json())
+      .then(data => {
+        if (!data.price) return alert("No se pudo obtener el precio del activo.");
+        const price = parseFloat(data.price);
+        cryptoQty = (usdAmount / price).toFixed(6);
 
-    new bootstrap.Modal(document.getElementById('purchaseModal')).show();
+        document.getElementById("cryptoQty").textContent = cryptoQty;
+        document.getElementById("cryptoName").textContent = unit;
+
+        document.getElementById('cardForm').reset();
+        document.getElementById('processingState').classList.add('d-none');
+        document.getElementById('completedState').classList.add('d-none');
+        document.getElementById('cardForm').classList.remove('d-none');
+        document.getElementById('payButton').classList.remove('d-none');
+        document.getElementById('closeBtn').classList.add('d-none');
+
+        new bootstrap.Modal(document.getElementById('purchaseModal')).show();
+      });
   }
 
   function handlePayment() {
@@ -288,16 +336,11 @@
     document.getElementById('processingState').classList.remove('d-none');
     document.getElementById('payButton').classList.add('d-none');
 
-    const priceMap = { BTC: 40000, ETH: 2000, ADA: 0.4 };
-    const price = priceMap[selectedCrypto] || 1;
-    cryptoQty = (usdAmount / price).toFixed(6);
-
     setTimeout(() => {
-      document.getElementById("cryptoQty").textContent = cryptoQty;
-      document.getElementById("cryptoName").textContent = unit;
       document.getElementById('processingState').classList.add('d-none');
       document.getElementById('completedState').classList.remove('d-none');
       document.getElementById('closeBtn').classList.remove('d-none');
+      addToPortfolio();
     }, 2000);
   }
 
@@ -315,37 +358,80 @@
     });
   }
 
+  function openCloseModal(symbol, value) {
+    symbolToClose = symbol;
+    closeAmount = parseFloat(value || 0);
+    document.getElementById('closeSymbol').textContent = symbol;
+    document.getElementById('closeAmount').textContent = closeAmount.toFixed(2);
+    new bootstrap.Modal(document.getElementById('closePositionModal')).show();
+  }
+
+  document.getElementById('confirmCloseBtn').addEventListener('click', function () {
+    fetch("/portfolio/delete", {
+      method: "POST",
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ symbol: symbolToClose })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        const toast = new bootstrap.Toast(document.getElementById('successToast'));
+        toast.show();
+        setTimeout(() => location.reload(), 1500);
+      } else {
+        alert("Error al cerrar posición.");
+      }
+    });
+  });
+
   document.addEventListener("DOMContentLoaded", function () {
+    fetch('/portfolio/assets')
+      .then(res => res.json())
+      .then(data => {
+        const select = document.getElementById("cryptoSelect");
+        if (select) {
+          select.innerHTML = "";
+          data.forEach(asset => {
+            const option = document.createElement("option");
+            option.value = asset.symbol;
+            option.textContent = `${asset.name} (${asset.symbol})`;
+            select.appendChild(option);
+          });
+        }
+      });
+
     const ctx = document.getElementById("portfolioChart");
-    const chart = new Chart(ctx, {
-      type: "pie",
-      data: {
-        labels: [{% for entry, name, symbol, logo in portfolio %}"{{ name }} ({{ symbol }})"{% if not loop.last %},{% endif %}{% endfor %}],
-        datasets: [{
-          data: [{% for entry, name, symbol, logo in portfolio %}{{ entry.CurrentValueUSD or 0 }}{% if not loop.last %},{% endif %}{% endfor %}],
-          backgroundColor: ["#FF9800", "#03A9F4", "#4CAF50", "#9C27B0", "#FFC107", "#E91E63"]
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: true,
-        plugins: {
-          legend: {
-            position: 'top',
-            labels: {
-              color: getComputedStyle(document.body).getPropertyValue('--text-color')
+    if (ctx) {
+      const chart = new Chart(ctx, {
+        type: "pie",
+        data: {
+          labels: [{% for entry, name, symbol, logo in portfolio %}"{{ name }} ({{ symbol }})"{% if not loop.last %},{% endif %}{% endfor %}],
+          datasets: [{
+            data: [{% for entry, name, symbol, logo in portfolio %}{{ entry.CurrentValueUSD or 0 }}{% if not loop.last %},{% endif %}{% endfor %}],
+            backgroundColor: ["#FF9800", "#03A9F4", "#4CAF50", "#9C27B0", "#FFC107", "#E91E63"]
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            legend: {
+              position: 'top',
+              labels: {
+                color: getComputedStyle(document.body).getPropertyValue('--text-color')
+              }
             }
           }
         }
-      }
-    });
+      });
 
-    const observer = new MutationObserver(() => {
-      chart.options.plugins.legend.labels.color = getComputedStyle(document.body).getPropertyValue('--text-color');
-      chart.update();
-    });
+      const observer = new MutationObserver(() => {
+        chart.options.plugins.legend.labels.color = getComputedStyle(document.body).getPropertyValue('--text-color');
+        chart.update();
+      });
 
-    observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+      observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    }
   });
 </script>
 {% endblock %}

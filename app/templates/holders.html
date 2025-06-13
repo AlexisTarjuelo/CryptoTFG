@@ -70,7 +70,6 @@
     border: 1px solid var(--accent);
     border-radius: 12px;
     padding: 1rem;
-    height: 100%;
     color: var(--text-color);
   }
 
@@ -86,6 +85,13 @@
     flex-direction: column;
     justify-content: center;
     text-align: center;
+    padding: 0.5rem;
+  }
+
+  .stat-card canvas {
+    height: 300px !important;
+    display: block;
+    margin: 0 auto;
   }
 
   #filterWarning {
@@ -94,13 +100,62 @@
     display: none;
     margin-top: 1rem;
   }
+
+  .legend {
+    font-size: 0.95rem;
+    padding: 1rem;
+    border: 1px solid var(--accent);
+    border-radius: 10px;
+    margin-bottom: 2rem;
+    background-color: var(--header-bg);
+  }
+  .legend h5 {
+    color: var(--accent);
+    margin-bottom: 0.75rem;
+  }
+  .legend ul {
+    list-style-type: none;
+    padding-left: 0;
+  }
+  .legend li {
+    margin-bottom: 0.5rem;
+  }
+  .legend img {
+    width: 20px;
+    height: 20px;
+    margin-right: 0.5rem;
+    vertical-align: middle;
+  }
 </style>
 
 <div class="container py-4">
   <h1 class="mb-4 text-accent">Holders por Activo</h1>
 
+  <div class="legend">
+    <h5>ℹ️ Guía Rápida</h5>
+    <p>
+      Este panel muestra las direcciones (wallets) que poseen tokens de un activo (holders). Están agrupadas por categoría
+      según la cantidad que poseen de ese activo, facilitando el análisis de distribución entre pequeños y grandes poseedores.
+    </p>
+    <ul>
+      <li><strong>Total de Holders:</strong> Cantidad de direcciones distintas con saldo positivo.</li>
+      <li><strong>Total Acumulado:</strong> Suma total de tokens entre todos los holders filtrados.</li>
+      <li><strong>Categoría más Común:</strong> La categoría con más cantidad de direcciones.</li>
+    </ul>
+    <p>✅ Usa los filtros para analizar activos específicos y su distribución. Los gráficos visuales permiten detectar patrones fácilmente.</p>
+    <hr style="margin: 1rem 0; border-color: var(--accent);">
+    <h6 style="color: var(--accent);">Categorías de Holders por Balance</h6>
+    <ul>
+      <li><strong>Compsognathus</strong> 🦎: 0.01 - 0.9999 tokens</li>
+      <li><strong>Velociraptor</strong> 🦖: 1 - 9.9999 tokens</li>
+      <li><strong>Triceratops</strong> 🐮: 10 - 49.9999 tokens</li>
+      <li><strong>Diplodocus</strong> 🦕: 50 - 199.9999 tokens</li>
+      <li><strong>Tyrannosaurus Rex</strong> 🐲: 200 tokens o más</li>
+    </ul>
+  </div>
+
   <div class="top-grid">
-    <div class="stat-card top-stats">
+    <div class="stat-card top-stats" style="min-height: 260px;">
       <h4>Total de Holders</h4>
       <p id="totalHolders">-</p>
       <h4>Total Acumulado</h4>
@@ -108,7 +163,7 @@
       <h4>Categoría más Común</h4>
       <p id="mostCommonCategory">-</p>
     </div>
-    <div class="stat-card">
+    <div class="stat-card" style="min-height: 320px; display: flex; justify-content: center; align-items: center;">
       <canvas id="pieChart"></canvas>
     </div>
   </div>

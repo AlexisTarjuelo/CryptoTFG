@@ -5,8 +5,8 @@ from shutil import move
 from app import create_app
 from app.models import db, Asset, AssetPrice
 
-CSV_FOLDER = 'D:\csv_historicos'
-PROCESSED_FOLDER = 'D:\csv_historicos/Procesados/OK'
+CSV_FOLDER = os.path.join('D:', 'csv_historicos')
+PROCESSED_FOLDER = os.path.join(CSV_FOLDER, 'Procesados', 'OK')
 
 def load_prices_from_csv():
     app = create_app()
@@ -29,12 +29,29 @@ def load_prices_from_csv():
                 filepath = os.path.join(CSV_FOLDER, file)
                 df = pd.read_csv(filepath)
 
-                for _, row in df.iterrows():
+                # Verificar columnas requeridas
+                required_columns = {'price', 'market_cap', 'total_volume', 'snapped_at'}
+                if not required_columns.issubset(df.columns):
+                    print(f"❌ Columnas faltantes en {file}")
+                    continue
+
+                # Obtener fechas ya existentes para evitar duplicados
+                existing_dates = {
+                    ap.RecordedAt for ap in AssetPrice.query.filter_by(AssetID=asset.AssetID).all()
+                }
+
+                registros_agregados = 0
+                for idx, row in df.iterrows():
                     try:
+                        recorded_at = datetime.strptime(
+                            row['snapped_at'].replace(' UTC', ''), '%Y-%m-%d %H:%M:%S'
+                        )
+                        if recorded_at in existing_dates:
+                            continue
+
                         price = float(row['price'])
                         market_cap = float(row['market_cap']) if not pd.isna(row['market_cap']) else None
                         volume = float(row['total_volume']) if not pd.isna(row['total_volume']) else None
-                        recorded_at = datetime.strptime(row['snapped_at'].replace(' UTC', ''), '%Y-%m-%d %H:%M:%S')
 
                         price_record = AssetPrice(
                             AssetID=asset.AssetID,
@@ -44,12 +61,16 @@ def load_prices_from_csv():
                             RecordedAt=recorded_at
                         )
                         db.session.add(price_record)
+                        registros_agregados += 1
 
                     except Exception as inner_e:
-                        print(f"⚠️ Error en fila: {inner_e}")
+                        print(f"⚠️ Error en fila {idx} de {file}: {inner_e}")
 
-                db.session.commit()
-                print(f"✅ Cargado: {file}")
+                if registros_agregados > 0:
+                    db.session.commit()
+                    print(f"✅ Cargado: {file} ({registros_agregados} nuevos registros)")
+                else:
+                    print(f"ℹ️ Sin nuevos registros para {file}")
 
                 # Mover archivo procesado
                 os.makedirs(PROCESSED_FOLDER, exist_ok=True)

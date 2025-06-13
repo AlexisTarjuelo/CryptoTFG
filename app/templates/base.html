@@ -7,238 +7,256 @@
   <title>{% block title %}Cryptotfg{% endblock %}</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
-  <style>
-    :root {
-      --bg-color: #0A0E17;
-      --text-color: white;
-      --accent: #6EF1B3;
-      --header-bg: #101823;
-      --table-row-odd: #0D121C;
-      --table-row-even: #101823;
-      --menu-bg: #1A2332;
-      --menu-text: white;
-    }
+   <style>
+  :root {
+    --bg-color: #0A0E17;
+    --text-color: white;
+    --accent: #6EF1B3;
+    --header-bg: #101823;
+    --table-row-odd: #0D121C;
+    --table-row-even: #101823;
+    --menu-bg: #1A2332;
+    --menu-text: white;
+    --card: #1e1e2f;
+    --btn-edit-bg: var(--accent);
+    --btn-edit-text: #000;
+    --btn-delete-bg: #e74c3c;
+    --btn-delete-text: #fff;
+  }
 
-    body.light {
-      --bg-color: #f7f7f7;
-      --text-color: #101010;
-      --accent: #13c291;
-      --header-bg: #ffffff;
-      --table-row-odd: #f2f2f2;
-      --table-row-even: #ffffff;
-      --menu-bg: #ffffff;
-      --menu-text: #101010;
-    }
+  body.light {
+    --bg-color: #f7f7f7;
+    --text-color: #101010;
+    --accent: #13c291;
+    --header-bg: #ffffff;
+    --table-row-odd: #f2f2f2;
+    --table-row-even: #ffffff;
+    --menu-bg: #ffffff;
+    --menu-text: #101010;
+    --card: #ffffff;
+    --btn-edit-bg: var(--accent);
+    --btn-edit-text: #ffffff;
+    --btn-delete-bg: #ff6b6b;
+    --btn-delete-text: #ffffff;
+  }
 
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family: 'Poppins', 'Segoe UI', sans-serif;
-    }
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', 'Segoe UI', sans-serif;
+  }
 
-    body {
-      background-color: var(--bg-color);
-      color: var(--text-color);
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-    }
+  body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
 
-    {% if not login_page %}
-    header {
-      background-color: var(--header-bg);
-      padding: 1rem 2rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border-bottom: 1px solid var(--accent);
-      flex-wrap: wrap;
-      gap: 1rem;
-    }
+  {% if not login_page %}
+  header {
+    background-color: var(--header-bg);
+    padding: 1rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--accent);
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
 
-    .logo-container {
-      display: flex;
-      align-items: center;
-    }
+  .logo-container a {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+  }
 
-    .logo-container img {
-      width: 80px;
-      margin-right: 0.6rem;
-    }
+  .logo-container img {
+    width: 80px;
+    margin-right: 0.6rem;
+  }
 
-    .app-name {
-      font-size: 1.8rem;
-      color: var(--accent);
-      font-weight: 600;
-      letter-spacing: -0.5px;
-    }
+  .app-name {
+    font-size: 1.8rem;
+    color: var(--accent);
+    font-weight: 600;
+    letter-spacing: -0.5px;
+  }
 
-    .search-bar {
-      flex: 1;
-      max-width: 400px;
-      margin: 0 2rem;
-      min-width: 250px;
-    }
+  .search-bar {
+    flex: 1;
+    max-width: 400px;
+    margin: 0 2rem;
+    min-width: 250px;
+  }
 
-    .search-bar input {
-      width: 100%;
-      padding: 0.5rem 1rem;
-      border-radius: 8px;
-      border: 1px solid var(--accent);
-      background-color: transparent;
-      color: var(--text-color);
-      font-size: 1rem;
-    }
+  .search-bar input {
+    width: 100%;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    border: 1px solid var(--accent);
+    background-color: transparent;
+    color: var(--text-color);
+    font-size: 1rem;
+  }
 
-    #suggestionBox {
-      z-index: 1050;
-    }
+  #suggestionBox {
+    z-index: 1050;
+  }
 
+  .nav-toggle {
+    display: none;
+    font-size: 1.5rem;
+    background: none;
+    border: none;
+    color: var(--accent);
+    cursor: pointer;
+  }
+
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+    flex-wrap: nowrap;
+  }
+
+  .nav-links a {
+    color: var(--text-color);
+    text-decoration: none;
+    font-size: 1rem;
+    font-weight: 500;
+  }
+
+  .nav-links a:hover,
+  .nav-links a.active {
+    color: var(--accent);
+    border-bottom: 2px solid var(--accent);
+  }
+
+  .toggle-theme {
+    background-color: transparent;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    padding: 0.3rem 0.8rem;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+
+  .toggle-theme:hover {
+    background-color: var(--accent);
+    color: var(--bg-color);
+  }
+
+  .user-menu {
+    margin-left: 1rem;
+    display: flex;
+    align-items: center;
+    position: relative;
+  }
+
+  .user-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    cursor: pointer;
+    object-fit: cover;
+  }
+
+  .dropdown {
+    position: absolute;
+    top: 55px;
+    right: 0;
+    background-color: var(--menu-bg);
+    color: var(--menu-text);
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    display: none;
+    flex-direction: column;
+    min-width: 160px;
+    z-index: 999;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  }
+
+  .dropdown.show {
+    display: flex;
+  }
+
+  .dropdown a {
+    padding: 0.75rem 1rem;
+    text-decoration: none;
+    color: var(--menu-text);
+    font-size: 0.95rem;
+  }
+
+  .dropdown a:hover {
+    background-color: var(--accent);
+    color: var(--bg-color);
+  }
+
+  .admin-menu .dropdown {
+    right: 0;
+    top: 55px;
+  }
+
+  @media (max-width: 768px) {
     .nav-toggle {
-      display: none;
-      font-size: 1.5rem;
-      background: none;
-      border: none;
-      color: var(--accent);
-      cursor: pointer;
+      display: block;
     }
 
     .nav-links {
+      display: none;
+      flex-direction: column;
+      background-color: var(--header-bg);
+      width: 100%;
+      margin-top: 1rem;
+      padding: 1rem 0;
+      border-top: 1px solid var(--accent);
+    }
+
+    .nav-links.show {
       display: flex;
-      align-items: center;
-      gap: 1.2rem;
-      flex-wrap: nowrap;
-    }
-
-    .nav-links a {
-      color: var(--text-color);
-      text-decoration: none;
-      font-size: 1rem;
-      font-weight: 500;
-    }
-
-    .nav-links a:hover,
-    .nav-links a.active {
-      color: var(--accent);
-      border-bottom: 2px solid var(--accent);
-    }
-
-    .toggle-theme {
-      background-color: transparent;
-      border: 1px solid var(--accent);
-      color: var(--accent);
-      padding: 0.3rem 0.8rem;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-
-    .toggle-theme:hover {
-      background-color: var(--accent);
-      color: var(--bg-color);
     }
 
     .user-menu {
-      margin-left: 1rem;
-      display: flex;
-      align-items: center;
-      position: relative;
+      justify-content: center;
     }
+  }
+  {% endif %}
 
-    .user-avatar {
-      width: 48px;
-      height: 48px;
-      border-radius: 50%;
-      cursor: pointer;
-      object-fit: cover;
-    }
+  main {
+    flex: 1;
+    padding: 2rem;
+  }
 
-    .dropdown {
-      position: absolute;
-      top: 55px;
-      right: 0;
-      background-color: var(--menu-bg);
-      color: var(--menu-text);
-      border: 1px solid var(--accent);
-      border-radius: 8px;
-      display: none;
-      flex-direction: column;
-      min-width: 160px;
-      z-index: 999;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-    }
-
-    .dropdown.show {
-      display: flex;
-    }
-
-    .dropdown a {
-      padding: 0.75rem 1rem;
-      text-decoration: none;
-      color: var(--menu-text);
-      font-size: 0.95rem;
-    }
-
-    .dropdown a:hover {
-      background-color: var(--accent);
-      color: var(--bg-color);
-    }
-
-    @media (max-width: 768px) {
-      .nav-toggle {
-        display: block;
-      }
-
-      .nav-links {
-        display: none;
-        flex-direction: column;
-        background-color: var(--header-bg);
-        width: 100%;
-        margin-top: 1rem;
-        padding: 1rem 0;
-        border-top: 1px solid var(--accent);
-      }
-
-      .nav-links.show {
-        display: flex;
-      }
-
-      .user-menu {
-        justify-content: center;
-      }
-    }
-
-    {% endif %}
-
+  @media (max-width: 768px) {
     main {
-      flex: 1;
-      padding: 2rem;
+      padding: 1.5rem 1rem;
     }
+  }
 
-    @media (max-width: 768px) {
-      main {
-        padding: 1.5rem 1rem;
-      }
-    }
+  {% if not login_page %}
+  footer {
+    background-color: var(--header-bg);
+    padding: 1rem;
+    text-align: center;
+    color: var(--accent);
+    font-size: 0.9rem;
+    border-top: 1px solid var(--accent);
+  }
+  {% endif %}
+</style>
 
-    {% if not login_page %}
-    footer {
-      background-color: var(--header-bg);
-      padding: 1rem;
-      text-align: center;
-      color: var(--accent);
-      font-size: 0.9rem;
-      border-top: 1px solid var(--accent);
-    }
-    {% endif %}
-  </style>
 </head>
 <body>
   {% if not login_page %}
   <header>
     <div class="logo-container">
-      <img src="/static/images/logo_sin_texto.png" alt="Logo" />
-      <span class="app-name">Cryptotfg</span>
+      <a href="{{ url_for('auth.dashboard') }}">
+        <img src="/static/images/logo_sin_texto.png" alt="Logo" />
+        <span class="app-name">Cryptotfg</span>
+      </a>
     </div>
 
     <button class="nav-toggle" id="navToggle">☰</button>
@@ -256,7 +274,19 @@
       <a href="/portfolio" class="{{ 'active' if request.path.startswith('/portfolio') else '' }}">Portfolio</a>
       <a href="/versus" class="{{ 'active' if request.path == '/versus' else '' }}">Versus</a>
       <a href="/about" class="{{ 'active' if request.path == '/about' else '' }}">About</a>
+
+      {% if g.user and g.user.Role == 'admin' %}
+        <div class="admin-menu position-relative">
+          <button class="btn btn-sm toggle-theme" id="adminToggle">⚙️</button>
+          <div class="dropdown" id="adminDropdown">
+            <a href="/admin/users">👤 Usuarios</a>
+            <a href="/admin/assets">📈 Activos</a>
+          </div>
+        </div>
+      {% endif %}
+
       <button class="toggle-theme" onclick="toggleTheme()">🌚</button>
+
       <div class="user-menu">
         <img src="{{ url_for('static', filename='images/avatars/' ~ g.user.Avatar) }}" alt="Usuario" class="user-avatar" />
         <div class="dropdown">
@@ -281,16 +311,16 @@
   <script>
     document.addEventListener("DOMContentLoaded", function () {
       const avatar = document.querySelector(".user-avatar");
-      const dropdown = document.querySelector(".dropdown");
+      const userDropdown = document.querySelector(".user-menu .dropdown");
 
       if (avatar) {
         avatar.addEventListener("click", function (e) {
           e.stopPropagation();
-          dropdown.classList.toggle("show");
+          userDropdown.classList.toggle("show");
         });
 
         document.addEventListener("click", function () {
-          dropdown.classList.remove("show");
+          userDropdown.classList.remove("show");
         });
       }
 
@@ -306,6 +336,21 @@
           navLinks.classList.remove("show");
         });
       });
+
+      // Admin menu toggle
+      const adminToggle = document.getElementById("adminToggle");
+      const adminDropdown = document.getElementById("adminDropdown");
+
+      if (adminToggle && adminDropdown) {
+        adminToggle.addEventListener("click", function (e) {
+          e.stopPropagation();
+          adminDropdown.classList.toggle("show");
+        });
+
+        document.addEventListener("click", function () {
+          adminDropdown.classList.remove("show");
+        });
+      }
 
       if (localStorage.getItem('theme') === 'light') {
         document.body.classList.add('light');

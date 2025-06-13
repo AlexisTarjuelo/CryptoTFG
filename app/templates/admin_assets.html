@@ -1,0 +1,334 @@
+{% extends "base.html" %}
+{% block title %}Administración de Activos{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+
+<style>
+  table.dataTable {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    overflow: hidden;
+    width: 100%;
+  }
+  table.dataTable thead {
+    background-color: var(--header-bg);
+    color: var(--accent);
+  }
+  table.dataTable tbody tr:nth-child(odd) {
+    background-color: var(--table-row-odd);
+  }
+  table.dataTable tbody tr:nth-child(even) {
+    background-color: var(--table-row-even);
+  }
+  table.dataTable td, table.dataTable th {
+    padding: 1rem;
+    text-align: left;
+  }
+  .btn-edit, .btn-delete, .btn-refresh {
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    font-weight: 500;
+    border: none;
+    font-size: 0.9rem;
+    cursor: pointer;
+  }
+  .btn-edit {
+    background-color: var(--accent);
+    color: #000;
+  }
+  .btn-delete {
+    background-color: #e74c3c;
+    color: white;
+  }
+  .btn-refresh {
+    background-color: #3498db;
+    color: white;
+  }
+  .btn-edit:hover, .btn-delete:hover, .btn-refresh:hover {
+    opacity: 0.9;
+  }
+  .dataTables_filter input {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    border: 1px solid var(--accent);
+    padding: 0.5rem;
+    border-radius: 8px;
+    margin-left: 0.5rem;
+  }
+  .dataTables_wrapper .dataTables_paginate .paginate_button {
+    background: var(--header-bg);
+    border: 1px solid var(--accent);
+    color: var(--accent) !important;
+    border-radius: 6px;
+    padding: 0.4rem 0.8rem;
+    margin: 0 2px;
+  }
+  .dataTables_wrapper .dataTables_paginate .paginate_button.current {
+    background: var(--accent);
+    color: var(--bg-color) !important;
+  }
+  .logo-small {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+    border-radius: 50%;
+    border: 1px solid var(--accent);
+  }
+  .fade-in {
+    opacity: 0;
+    transition: opacity 0.6s ease-in;
+  }
+  .fade-in.show {
+    opacity: 1;
+  }
+  #loadingSpinner {
+    text-align: center;
+    padding: 2rem;
+  }
+</style>
+
+<h1 class="text-accent mb-4">Administración de Activos</h1>
+
+<div class="mb-4 d-flex flex-wrap gap-3">
+  <button class="btn-refresh" onclick="updateAssets()">Actualizar Activos</button>
+  <button class="btn-refresh" onclick="updatePrices()">Actualizar Precios</button>
+</div>
+
+<!-- Spinner de carga inicial -->
+<div id="loadingSpinner">
+  <div class="spinner-border text-accent" role="status" style="width: 3rem; height: 3rem;">
+    <span class="visually-hidden">Cargando...</span>
+  </div>
+  <p style="color: var(--accent); margin-top: 1rem;">Cargando activos...</p>
+</div>
+<!-- Tabla de activos -->
+<div class="table-responsive">
+  <table id="assetsTable" class="display fade-in" style="display:none;">
+    <thead>
+      <tr>
+        <th>Logo</th>
+        <th>Nombre</th>
+        <th>Símbolo</th>
+        <th>Dirección</th>
+        <th>Decimales</th>
+        <th>Fuente</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for asset in assets %}
+      <tr>
+        <td><img src="{{ asset.LogoURL }}" alt="{{ asset.Symbol }}" class="logo-small"></td>
+        <td>{{ asset.Name }}</td>
+        <td>{{ asset.Symbol }}</td>
+        <td>{{ asset.AssetAddress or 'N/A' }}</td>
+        <td>{{ asset.Decimals or 'N/A' }}</td>
+        <td>{{ asset.Source or 'N/A' }}</td>
+        <td>
+          <button class="btn-edit" onclick="editAsset({{ asset.AssetID }})">Editar</button>
+          <button class="btn-delete" onclick="deleteAsset({{ asset.AssetID }})">Eliminar</button>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Modal Edición Activo -->
+<div class="modal fade" id="editAssetModal" tabindex="-1" aria-labelledby="editAssetModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title text-accent" id="editAssetModalLabel">Editar Activo</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <form id="editAssetForm">
+          <input type="hidden" id="editAssetID">
+          <div class="mb-3">
+            <label for="editAssetName" class="form-label">Nombre</label>
+            <input type="text" class="form-control" id="editAssetName" required>
+          </div>
+          <div class="mb-3">
+            <label for="editAssetSymbol" class="form-label">Símbolo</label>
+            <input type="text" class="form-control" id="editAssetSymbol" required>
+          </div>
+          <div class="mb-3">
+            <label for="editAssetAddress" class="form-label">Dirección</label>
+            <input type="text" class="form-control" id="editAssetAddress">
+          </div>
+          <div class="mb-3">
+            <label for="editAssetDecimals" class="form-label">Decimales</label>
+            <input type="number" class="form-control" id="editAssetDecimals" min="0">
+          </div>
+          <div class="mb-3">
+            <label for="editAssetSource" class="form-label">Fuente</label>
+            <input type="text" class="form-control" id="editAssetSource">
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn btn-accent" onclick="submitAssetEdit()">Guardar Cambios</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast éxito -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1055">
+  <div id="successToast" class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="d-flex">
+      <div class="toast-body" id="toastMessage">
+        Acción exitosa.
+      </div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Cerrar"></button>
+    </div>
+  </div>
+</div>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+  $(document).ready(function () {
+    $('#assetsTable').DataTable({
+      language: {
+        search: "Buscar activo:",
+        lengthMenu: "Mostrar _MENU_ activos por página",
+        zeroRecords: "No se encontraron activos",
+        info: "Página _PAGE_ de _PAGES_",
+        infoEmpty: "No hay activos disponibles",
+        infoFiltered: "(filtrado de _MAX_ activos totales)",
+        paginate: { first: "Primero", last: "Último", next: "→", previous: "←" }
+      },
+      initComplete: function () {
+        document.getElementById('loadingSpinner').style.display = 'none';
+        const table = document.getElementById('assetsTable');
+        table.style.display = 'table';
+        table.classList.add('show');
+      }
+    });
+  });
+
+  function editAsset(assetId) {
+    const row = $(`#assetsTable button[onclick='editAsset(${assetId})']`).closest('tr');
+    const columns = row.find('td');
+
+    document.getElementById('editAssetID').value = assetId;
+    document.getElementById('editAssetName').value = columns.eq(1).text();
+    document.getElementById('editAssetSymbol').value = columns.eq(2).text();
+    document.getElementById('editAssetAddress').value = columns.eq(3).text() !== 'N/A' ? columns.eq(3).text() : '';
+    document.getElementById('editAssetDecimals').value = columns.eq(4).text() !== 'N/A' ? columns.eq(4).text() : '';
+    document.getElementById('editAssetSource').value = columns.eq(5).text() !== 'N/A' ? columns.eq(5).text() : '';
+
+    new bootstrap.Modal(document.getElementById('editAssetModal')).show();
+  }
+
+  function submitAssetEdit() {
+    const form = document.getElementById('editAssetForm');
+    if (!form.checkValidity()) {
+      form.reportValidity();
+      return;
+    }
+
+    const assetId = document.getElementById('editAssetID').value;
+    const data = {
+      name: document.getElementById('editAssetName').value,
+      symbol: document.getElementById('editAssetSymbol').value,
+      address: document.getElementById('editAssetAddress').value,
+      decimals: document.getElementById('editAssetDecimals').value,
+      source: document.getElementById('editAssetSource').value,
+    };
+
+    fetch(`/admin/asset/update/${assetId}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data)
+    })
+      .then(res => res.json())
+      .then(response => {
+        if (response.success) {
+          showToast("✅ Activo actualizado correctamente");
+          setTimeout(() => location.reload(), 1000);
+        } else {
+          alert("❌ Error al actualizar activo");
+        }
+      });
+  }
+
+  function deleteAsset(assetId) {
+    if (confirm("¿Seguro que quieres eliminar este activo?")) {
+      fetch(`/admin/asset/delete/${assetId}`, { method: "DELETE" })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            showToast("✅ Activo eliminado correctamente");
+            setTimeout(() => location.reload(), 1000);
+          } else {
+            alert(data.error || "❌ Error al eliminar activo");
+          }
+        });
+    }
+  }
+
+  function updateAssets() {
+    if (!confirm("¿Quieres actualizar los activos? Esto puede tardar unos minutos.")) return;
+
+    document.getElementById('loadingSpinner').style.display = 'block';
+    document.getElementById('assetsTable').style.display = 'none';
+
+    fetch('/admin/update-assets', { method: "POST" })
+      .then(response => response.json())
+      .then(data => {
+        document.getElementById('loadingSpinner').style.display = 'none';
+        if (data.success) {
+          showToast("✅ Activos actualizados correctamente.");
+          setTimeout(() => location.reload(), 1500);
+        } else {
+          alert("❌ Error actualizando activos: " + (data.error || ""));
+        }
+      })
+      .catch(error => {
+        console.error(error);
+        document.getElementById('loadingSpinner').style.display = 'none';
+        alert("❌ Error al intentar actualizar activos.");
+      });
+  }
+
+  function updatePrices() {
+    if (!confirm("¿Quieres actualizar los precios? Esto puede tardar unos minutos.")) return;
+
+    document.getElementById('loadingSpinner').style.display = 'block';
+    document.getElementById('assetsTable').style.display = 'none';
+
+    fetch('/admin/update-prices', { method: "POST" })
+      .then(response => response.json())
+      .then(data => {
+        document.getElementById('loadingSpinner').style.display = 'none';
+        if (data.success) {
+          showToast("✅ Precios actualizados correctamente.");
+          setTimeout(() => location.reload(), 1500);
+        } else {
+          alert("❌ Error actualizando precios: " + (data.error || ""));
+        }
+      })
+      .catch(error => {
+        console.error(error);
+        document.getElementById('loadingSpinner').style.display = 'none';
+        alert("❌ Error al intentar actualizar precios.");
+      });
+  }
+
+  function showToast(message) {
+    document.getElementById('toastMessage').innerText = message;
+    const toast = new bootstrap.Toast(document.getElementById('successToast'));
+    toast.show();
+  }
+</script>
+
+
+{% endblock %}
