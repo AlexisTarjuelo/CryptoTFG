@@ -216,47 +216,49 @@
   </div>
 </div>
 <div class="mb-5">
-  <h4 class="mb-3">Noticias relacionadas</h4>
-  {% if related_news %}
-    <div id="newsCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="6000">
-      <div class="carousel-inner">
-        {% for group in related_news|batch(3, '') %}
-          <div class="carousel-item {% if loop.first %}active{% endif %}">
-            <div class="row g-4">
-              {% for news in group if news %}
-                <div class="col-md-6 col-lg-4">
-                  <div class="card h-100 border-0 shadow-sm">
-                    {% if news.Imagen %}
-                      <img src="{{ news.Imagen }}" class="card-img-top" alt="imagen noticia" style="height: 180px; object-fit: cover;">
-                    {% endif %}
-                    <div class="card-body d-flex flex-column">
-                      <h6 class="card-title">{{ news.Titulo or 'Sin título' }}</h6>
-                      <p class="card-text text-muted small mt-auto">{{ news.FechaPublicacion.strftime('%d/%m/%Y %H:%M') if news.FechaPublicacion else 'Fecha desconocida' }}</p>
-                      <a href="{{ news.URL or '#' }}" target="_blank" class="btn btn-sm mt-2 range-btn">Leer más</a>
-                    </div>
+<h4 class="mb-3">Noticias relacionadas</h4>
+{% if related_news %}
+  <div id="newsCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="6000">
+    <div class="carousel-inner">
+      {% for group in related_news|batch(3, '') %}
+        <div class="carousel-item {% if loop.first %}active{% endif %}">
+          <div class="row g-4">
+            {% for news in group if news %}
+              <div class="col-md-6 col-lg-4">
+                <div class="card h-100 border-0 shadow-sm">
+                  {% if news.Image %}
+                    <img src="{{ news.Image }}" class="card-img-top" alt="imagen noticia" style="height: 180px; object-fit: cover;">
+                  {% endif %}
+                  <div class="card-body d-flex flex-column">
+                    <h6 class="card-title">{{ news.Title or 'No title' }}</h6>
+                    <p class="card-text text-muted small mt-auto">
+                      {{ news.PublicationDate.strftime('%d/%m/%Y %H:%M') if news.PublicationDate else 'Unknown date' }}
+                    </p>
+                    <a href="{{ news.URL or '#' }}" target="_blank" class="btn btn-sm mt-2 range-btn">Leer más</a>
                   </div>
                 </div>
-              {% endfor %}
-            </div>
+              </div>
+            {% endfor %}
           </div>
-        {% endfor %}
-      </div>
-      {% if related_news|length > 3 %}
-        <button class="carousel-control-prev" type="button" data-bs-target="#newsCarousel" data-bs-slide="prev">
-          <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-          <span class="visually-hidden">Anterior</span>
-        </button>
-        <button class="carousel-control-next" type="button" data-bs-target="#newsCarousel" data-bs-slide="next">
-          <span class="carousel-control-next-icon" aria-hidden="true"></span>
-          <span class="visually-hidden">Siguiente</span>
-        </button>
-      {% endif %}
+        </div>
+      {% endfor %}
     </div>
-  {% else %}
-   <div style="background-color: var(--card); color: var(--text-color); padding: 1.5rem; border-radius: 12px; text-align: center; border: 1px solid var(--border);">
-  Aún no hay noticias para este activo.
-</div>
-  {% endif %}
+    {% if related_news|length > 3 %}
+      <button class="carousel-control-prev" type="button" data-bs-target="#newsCarousel" data-bs-slide="prev">
+        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+        <span class="visually-hidden">Anterior</span>
+      </button>
+      <button class="carousel-control-next" type="button" data-bs-target="#newsCarousel" data-bs-slide="next">
+        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+        <span class="visually-hidden">Siguiente</span>
+      </button>
+    {% endif %}
+  </div>
+{% else %}
+  <div style="background-color: var(--card); color: var(--text-color); padding: 1.5rem; border-radius: 12px; text-align: center; border: 1px solid var(--border);">
+    Aún no hay noticias para este activo.
+  </div>
+{% endif %}
 </div>
 </div>
 

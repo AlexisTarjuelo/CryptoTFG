@@ -38,11 +38,6 @@
     transition: background 0.3s ease, box-shadow 0.3s ease;
   }
 
-  .profile-avatar button:hover {
-    background-color: #3EC894;
-    box-shadow: 0 0 10px #3EC894;
-  }
-
   .profile-form {
     display: flex;
     flex-direction: column;
@@ -110,11 +105,6 @@
     margin-top: 3rem;
   }
 
-  .biometric-section h3 {
-    color: var(--accent);
-    margin-bottom: 1rem;
-  }
-
   .biometric-btn {
     background-color: var(--accent);
     border: none;
@@ -127,17 +117,14 @@
     transition: background 0.3s ease, box-shadow 0.3s ease;
   }
 
-  .biometric-btn:hover {
-    background-color: #3EC894;
-    box-shadow: 0 0 10px #3EC894;
-  }
-
   .modal {
     display: none;
     position: fixed;
     z-index: 9999;
-    left: 0; top: 0;
-    width: 100%; height: 100%;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
     background-color: rgba(0, 0, 0, 0.7);
     justify-content: center;
     align-items: center;
@@ -200,6 +187,19 @@
   }
 </style>
 
+<!-- ✅ Bloque de mensajes flash -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+
 <div class="profile-container">
   <div class="profile-avatar">
     <img src="{{ url_for('static', filename='images/avatars/' ~ user.Avatar) }}" alt="Avatar" id="avatar-preview">
@@ -249,7 +249,7 @@
       </a>
     {% else %}
       <p style="color: #6EF1B3;">✅ 2FA activado</p>
-      <form method="POST" action="{{ url_for('auth.disable_2fa') }}">
+      <form method="POST" action="{{ url_for('auth.disable_2fa_route') }}">
         {{ disable_2fa_form.hidden_tag() }}
         {{ disable_2fa_form.submit(class="biometric-btn") }}
       </form>
@@ -273,7 +273,9 @@
   </div>
 </div>
 
+
 <script>
+  // Modal avatar
   function openAvatarModal() {
     document.getElementById("avatarModal").style.display = "flex";
   }
@@ -283,11 +285,20 @@
   }
 
   function selectAvatar(filename) {
-    document.getElementById("avatar-preview").src = `/static/images/avatars/${filename}`;
-    document.querySelector("input[name='avatar']").value = filename;
-    closeAvatarModal();
+  // Actualiza la imagen mostrada
+  document.getElementById("avatar-preview").src = `/static/images/avatars/${filename}`;
+
+  // Asegura que el campo SELECT (form.avatar) se actualiza con el valor del avatar
+  const avatarField = document.querySelector("select[name='avatar']");
+  if (avatarField) {
+    avatarField.value = filename;
   }
 
+  // Cierra el modal
+  closeAvatarModal();
+}
+
+  // Validación contraseña
   const passwordInput = document.getElementById("newPassword");
   const confirmInput = document.getElementById("confirmPassword");
   const hint = document.getElementById("passwordHint");
@@ -326,13 +337,20 @@
   passwordInput.addEventListener("input", updatePasswordHints);
   confirmInput.addEventListener("input", updatePasswordHints);
 
+  // Biometric WebAuthn
   async function startBiometricRegistration() {
     const status = document.getElementById("bio-register-status");
     status.style.color = "white";
     status.textContent = "⏳ Iniciando registro...";
 
     try {
-      const res = await fetch("/biometric/start-registration");
+      const res = await fetch("/biometric/start-registration", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": getCSRFToken()
+        },
+      });
       const options = await res.json();
       options.challenge = toBuffer(options.challenge);
       options.user.id = toBuffer(options.user.id);
@@ -383,4 +401,5 @@
       .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   }
 </script>
+
 {% endblock %}
