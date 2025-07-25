@@ -1,7 +1,7 @@
 import requests
 from datetime import datetime
 from app import create_app
-from app.models import db, Asset, NoticiaCripto
+from app.models import db, Asset, CryptoNews  # ⬅️ Nombre del modelo actualizado
 
 def obtener_noticias_gdelt(query="bitcoin"):
     url = "https://api.gdeltproject.org/api/v2/doc/doc"
@@ -29,7 +29,7 @@ def actualizar_noticias():
     with app.app_context():
         # 🧹 Borrar todas las noticias previas
         print("🧹 Eliminando noticias anteriores...")
-        db.session.query(NoticiaCripto).delete()
+        db.session.query(CryptoNews).delete()  # ⬅️ Modelo actualizado
         db.session.commit()
 
         hoy = datetime.utcnow().date()
@@ -60,16 +60,16 @@ def actualizar_noticias():
                         continue  # ⛔ Solo noticias de hoy
 
                     # 🛑 Evitar duplicados por URL
-                    existe = NoticiaCripto.query.filter_by(Activo=symbol, URL=url).first()
+                    existe = CryptoNews.query.filter_by(Asset=symbol, URL=url).first()  # ⬅️ Campos actualizados
                     if existe:
                         continue
 
-                    noticia = NoticiaCripto(
-                        Activo=symbol,
-                        FechaPublicacion=fecha,
+                    noticia = CryptoNews(
+                        Asset=symbol,
+                        PublicationDate=fecha,
                         URL=url,
-                        Imagen=imagen,
-                        Titulo=titulo
+                        Image=imagen,
+                        Title=titulo
                     )
                     db.session.add(noticia)
                     guardadas += 1
@@ -84,4 +84,3 @@ def actualizar_noticias():
 
 if __name__ == "__main__":
     actualizar_noticias()
-

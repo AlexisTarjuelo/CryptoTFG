@@ -1,7 +1,7 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, BooleanField, SubmitField
 from wtforms.fields.choices import SelectField
-from wtforms.validators import DataRequired, Email, EqualTo, Length, Optional, Regexp
+from wtforms.validators import DataRequired, Email, EqualTo, Length, Optional, Regexp, InputRequired
 
 # Validación personalizada de contraseña segura
 password_requirements = Regexp(
@@ -16,19 +16,37 @@ class LoginForm(FlaskForm):
 
 
 class RegisterForm(FlaskForm):
-    first_name = StringField('Nombre', validators=[DataRequired()])
-    last_name = StringField('Primer Apellido', validators=[DataRequired()])
-    second_last_name = StringField('Segundo Apellido', validators=[DataRequired()])
-    email = StringField('Correo', validators=[DataRequired(), Email()])
-    phone = StringField('Teléfono', validators=[DataRequired()])
-    is_adult = BooleanField('¿Eres mayor de edad?', validators=[DataRequired()])
-    password = PasswordField('Contraseña', validators=[
-        DataRequired(),
-        Length(min=8, message='La contraseña debe tener al menos 8 caracteres'),
-        password_requirements
+    first_name = StringField('Nombre', validators=[DataRequired(message='El nombre es obligatorio.')])
+    last_name = StringField('Primer Apellido', validators=[DataRequired(message='El primer apellido es obligatorio.')])
+    second_last_name = StringField('Segundo Apellido',
+                                   validators=[DataRequired(message='El segundo apellido es obligatorio.')])
+
+    email = StringField('Correo', validators=[
+        DataRequired(message='El correo es obligatorio.'),
+        Email(message='Debes ingresar un correo válido.')
     ])
-    confirm_password = PasswordField('Confirmar contraseña', validators=[DataRequired(), EqualTo('password')])
-    accept_terms = BooleanField('Aceptar términos', validators=[DataRequired()])
+
+    phone = StringField('Teléfono', validators=[DataRequired(message='El teléfono es obligatorio.')])
+
+    is_adult = BooleanField('¿Eres mayor de edad?', validators=[
+        InputRequired(message='Debes confirmar que eres mayor de edad.')
+    ])
+
+    password = PasswordField('Contraseña', validators=[
+        DataRequired(message='La contraseña es obligatoria.'),
+        Length(min=8, message='La contraseña debe tener al menos 8 caracteres.'),
+        password_requirements  # Asume que esta es tu validación personalizada
+    ])
+
+    confirm_password = PasswordField('Confirmar contraseña', validators=[
+        DataRequired(message='Debes confirmar la contraseña.'),
+        EqualTo('password', message='Las contraseñas no coinciden.')
+    ])
+
+    accept_terms = BooleanField('Aceptar términos', validators=[
+        InputRequired(message='Debes aceptar los términos y condiciones.')
+    ])
+
     submit = SubmitField('Registrarse')
 
 

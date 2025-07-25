@@ -1,3 +1,5 @@
+import os
+
 import requests
 import time
 from datetime import datetime
@@ -5,11 +7,11 @@ from app import create_app, db
 from app.models import Transaction, WalletAddress
 
 # Claves API
-BSC_API_KEY = 'KVDQ4DN4B36ZSIVF8M4B8EF2J9J8ANZFF8'
-ETH_API_KEY = 'DW8EN18U6YAS6MVGERXVXSZSQFVN3XPVUV'
-POLYGON_API_KEY = 'HQB5ESF16QTJ8A2BA38S334E8CPWRCQBVG'
-HELIUS_API_KEY = '6ed7ac5b-ff7d-4ce1-b503-07b8db2ba840'
-BASE_API_KEY = 'A2NYP2NFGTEDM59HXUFMN8JX5GWQJSEVPI'
+BSC_API_KEY = os.getenv("BSCSCAN_API_KEY")
+ETH_API_KEY = os.getenv("ETHERSCAN_API_KEY")
+POLYGON_API_KEY = os.getenv("POLYGONSCAN_API_KEY")
+HELIUS_API_KEY = os.getenv("HELIUS_API_KEY")
+BASE_API_KEY = os.getenv("BASESCAN_API_KEY")
 
 MAX_AMOUNT = 1e30  # límite seguro para evitar desbordamiento
 

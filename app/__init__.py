@@ -11,16 +11,22 @@ load_dotenv()
 
 db = SQLAlchemy()
 csrf = CSRFProtect()
-mail = Mail()  # 💌 nuevo
+mail = Mail()
 
-def create_app():
+
+def create_app(config_class=None):
     app = Flask(__name__)
-    app.config.from_object('config.Config')
+
+    if config_class:
+        app.config.from_object(config_class)
+    else:
+        app.config.from_object('config.Config')
+
     app.debug = True
 
     db.init_app(app)
     csrf.init_app(app)
-    mail.init_app(app)  # 💌 inicialización
+    mail.init_app(app)
 
     from .routes import auth_bp
     app.register_blueprint(auth_bp)
@@ -45,3 +51,4 @@ def create_app():
             g.user = None
 
     return app
+

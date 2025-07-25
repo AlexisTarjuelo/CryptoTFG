@@ -1,12 +1,10 @@
-# app/models.py
-
 import os
 import base64
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from itsdangerous import URLSafeTimedSerializer as Serializer
 from flask import current_app
-from . import db  # Importa la instancia compartida desde __init__.py
+from . import db
 
 
 class User(db.Model):
@@ -32,6 +30,11 @@ class User(db.Model):
     two_factor_enabled = db.Column(db.Boolean, default=False)
     two_factor_secret = db.Column(db.String(32), nullable=True)
 
+    # Relaciones
+    portfolio_assets = db.relationship('PortfolioAsset', backref='user', cascade='all, delete-orphan', lazy=True)
+    wallet_addresses = db.relationship('WalletAddress', backref='user', cascade='all, delete-orphan', lazy=True)
+
+    # ---------- Métodos ----------
     def set_password(self, password):
         self.PasswordHash = generate_password_hash(password)
 
@@ -43,6 +46,39 @@ class User(db.Model):
 
     def get_otp_uri(self):
         return f"otpauth://totp/CryptoTFG:{self.Email}?secret={self.two_factor_secret}&issuer=CryptoTFG"
+
+    def enable_2fa(self):
+        self.two_factor_enabled = True
+        db.session.commit()
+
+    def disable_2fa(self):
+        self.two_factor_enabled = False
+        self.two_factor_secret = None
+        db.session.commit()
+
+    def register_biometric(self, credential_id, public_key, sign_count):
+        self.BiometricCredentialID = credential_id
+        self.BiometricPublicKey = public_key
+        self.SignCount = sign_count
+
+    def update_profile(self, first_name=None, last_name=None, email=None, phone=None, avatar=None):
+        if first_name: self.FirstName = first_name
+        if last_name: self.LastName = last_name
+        if email: self.Email = email
+        if phone: self.Phone = phone
+        if avatar: self.Avatar = avatar
+        db.session.commit()
+
+    def change_password(self, new_password):
+        self.set_password(new_password)
+        db.session.commit()
+
+    def reset_security(self):
+        self.disable_2fa()
+        self.BiometricCredentialID = None
+        self.BiometricPublicKey = None
+        self.SignCount = 0
+        db.session.commit()
 
     def get_reset_token(self, expires_sec=3600):
         s = Serializer(current_app.config['SECRET_KEY'])
@@ -71,12 +107,19 @@ class Asset(db.Model):
     id_coin = db.Column(db.String(100))
     LogoURL = db.Column(db.String(1000))
 
-    prices = db.relationship(
-        'AssetPrice',
-        backref='asset',
-        lazy=True,
-        cascade="all, delete-orphan"
-    )
+    prices = db.relationship('AssetPrice', backref='asset', lazy=True, cascade="all, delete-orphan")
+    portfolio_entries = db.relationship('PortfolioAsset', backref='asset', lazy=True, cascade="all, delete-orphan")
+    wallet_addresses = db.relationship('WalletAddress', backref='asset', lazy=True, cascade="all, delete-orphan")
+    transactions = db.relationship('Transaction', backref='asset', lazy=True, cascade="all, delete-orphan")
+    holders = db.relationship('Holder', backref='asset', lazy=True, cascade="all, delete-orphan")
+
+    def update_fields(self, data: dict):
+        self.Name = data.get('name', self.Name)
+        self.Symbol = data.get('symbol', self.Symbol)
+        self.AssetAddress = data.get('address', self.AssetAddress)
+        self.Decimals = data.get('decimals', self.Decimals)
+        self.Source = data.get('source', self.Source)
+        db.session.commit()
 
 
 class AssetPrice(db.Model):
@@ -113,33 +156,49 @@ class Transaction(db.Model):
     AmountUSD = db.Column(db.Numeric(38, 18), nullable=True)
     Timestamp = db.Column(db.DateTime, nullable=False)
 
-    asset = db.relationship('Asset', backref='transactions')
+class CryptoNews(db.Model):
+    __tablename__ = 'CryptoNews'
 
-
-class NoticiaCripto(db.Model):
-    __tablename__ = 'NoticiasCripto'
-
-    NoticiaID = db.Column(db.Integer, primary_key=True)
-    Activo = db.Column(db.String(10), nullable=False)
-    FechaPublicacion = db.Column(db.DateTime, nullable=False)
+    NewsID = db.Column(db.Integer, primary_key=True)
+    Asset = db.Column(db.String(10), nullable=False)
+    PublicationDate = db.Column(db.DateTime, nullable=False)
     URL = db.Column(db.Text, nullable=False)
-    Imagen = db.Column(db.Text)
-    Titulo = db.Column(db.Text)
+    Image = db.Column(db.Text)
+    Title = db.Column(db.Text)
+
 
 
 class PortfolioAsset(db.Model):
     __tablename__ = 'PortfolioAssets'
 
     PortfolioAssetID = db.Column(db.Integer, primary_key=True)
-    UserID = db.Column(db.Integer, db.ForeignKey('Users.UserID'), nullable=False)
-    AssetID = db.Column(db.Integer, db.ForeignKey('Assets.AssetID'), nullable=False)
+    UserID = db.Column(db.Integer, db.ForeignKey('Users.UserID', ondelete="CASCADE"), nullable=False)
+    AssetID = db.Column(db.Integer, db.ForeignKey('Assets.AssetID', ondelete="CASCADE"), nullable=False)
     Quantity = db.Column(db.Numeric(38, 18), nullable=False)
     PurchaseValueUSD = db.Column(db.Numeric(38, 18), nullable=False)
     CurrentValueUSD = db.Column(db.Numeric(38, 18), nullable=True)
     CreatedAt = db.Column(db.DateTime, default=datetime.utcnow)
 
-    user = db.relationship('User', backref='portfolio_assets')
-    asset = db.relationship('Asset', backref=db.backref('portfolio_entries', cascade="all, delete-orphan"))
+    def update_current_value(self, current_price):
+        self.CurrentValueUSD = float(self.Quantity) * float(current_price)
+
+    @staticmethod
+    def add_or_update(user_id, asset, quantity, purchase_value_usd, current_price):
+        existing = PortfolioAsset.query.filter_by(UserID=user_id, AssetID=asset.AssetID).first()
+        if existing:
+            existing.Quantity += quantity
+            existing.PurchaseValueUSD += purchase_value_usd
+            existing.update_current_value(current_price)
+        else:
+            new_entry = PortfolioAsset(
+                UserID=user_id,
+                AssetID=asset.AssetID,
+                Quantity=quantity,
+                PurchaseValueUSD=purchase_value_usd,
+                CurrentValueUSD=current_price * quantity
+            )
+            db.session.add(new_entry)
+        db.session.commit()
 
 
 class HolderCategory(db.Model):
@@ -159,23 +218,31 @@ class Holder(db.Model):
 
     HolderID = db.Column(db.Integer, primary_key=True)
     AssetID = db.Column(db.Integer, db.ForeignKey('Assets.AssetID'), nullable=False)
-    Address = db.Column(db.String(150), nullable=False)  # o incluso 200 si quieres cubrirte más
+    Address = db.Column(db.String(150), nullable=False)
     Balance = db.Column(db.Numeric(38, 18), nullable=False)
-
     CategoryID = db.Column(db.Integer, db.ForeignKey('HolderCategories.CategoryID'), nullable=True)
-    asset = db.relationship('Asset', backref='holders', lazy=True)
 
 
 class WalletAddress(db.Model):
     __tablename__ = 'WalletAddresses'
 
     WalletID = db.Column(db.Integer, primary_key=True)
-    UserID = db.Column(db.Integer, db.ForeignKey('Users.UserID'), nullable=True)
+    UserID = db.Column(db.Integer, db.ForeignKey('Users.UserID', ondelete="CASCADE"), nullable=True)
     Address = db.Column(db.String(120), nullable=False)
     Symbol = db.Column(db.String(10), nullable=False)
-    AssetID = db.Column(db.Integer, db.ForeignKey('Assets.AssetID'), nullable=True)
-    Source = db.Column(db.String(50), nullable=True)  # <- NUEVA COLUMNA para red: bsc, ethereum, polygon...
+    AssetID = db.Column(db.Integer, db.ForeignKey('Assets.AssetID', ondelete="CASCADE"), nullable=True)
+    Source = db.Column(db.String(50), nullable=True)
     CreatedAt = db.Column(db.DateTime, default=datetime.utcnow)
 
-    user = db.relationship('User', backref='wallet_addresses')
-    asset = db.relationship('Asset', backref='wallet_addresses')
+
+
+
+
+
+
+
+
+
+
+
+    

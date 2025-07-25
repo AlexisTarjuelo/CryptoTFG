@@ -5,8 +5,8 @@ from flask import url_for, current_app, render_template_string
 from datetime import datetime
 from app import mail
 
-def send_reset_email(user):
-    token = user.get_reset_token()
+def send_reset_email(user, token):
+    reset_url = url_for('auth.reset_password', token=token, _external=True)
     reset_url = url_for('auth.reset_password', token=token, _external=True)
 
     # 🌱 Texto plano para clientes que no renderizan HTML
